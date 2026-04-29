@@ -1,0 +1,87 @@
+.onboarding-container {
+  max-width: 32rem;
+  margin: 3rem auto;
+  padding: 2rem;
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  text-align: center;
+}
+.onboarding-step h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.options-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+.option-card {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: #f9fafb;
+  cursor: pointer;
+  transition: 0.15s;
+  font-weight: 500;
+}
+.option-card.selected {
+  border-color: #120f3f;
+  background: #eef2ff;
+  color: #0b0a26;
+}
+.option-card:hover {
+  border-color: #c7d2fe;
+}
+.big-button {
+  display: block;
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+  border-radius: 0.5rem;
+  background: #08080b;
+  color: white;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.big-button:hover { opacity: 0.9; }
+.big-button.secondary {
+  background: #e5e7eb;
+  color: #374151;
+}
+.toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+.toggle-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: #d1d5db;
+  border-radius: 12px;
+  transition: 0.2s;
+  cursor: pointer;
+}
+.toggle-switch.active {
+  background: #26262f;
+}
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: 0.2s;
+}
+.toggle-switch.active::after {
+  left: 22px;
+}
