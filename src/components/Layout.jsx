@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import LanguageSwitcher from './layout/LanguageSwitcher';
 
 const NAV_LINKS = [
   { to: '/dashboard', label: 'Dashboard', icon: '🏠' },
@@ -41,10 +42,10 @@ export default function Layout({ children }) {
           {/* Nav Links */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             {NAV_LINKS.map(({ to, label, icon }) => {
-              const active = location.pathname.startsWith(to) || 
+              const active = location.pathname.startsWith(to) ||
                              (to === '/lessons' && location.pathname.startsWith('/lesson/')) ||
                              (to === '/lessons' && location.pathname.startsWith('/practice/'));
-              
+
               return (
                 <Link key={to} to={to} style={{
                   display: 'flex', alignItems: 'center', gap: '6px',
@@ -64,6 +65,9 @@ export default function Layout({ children }) {
               );
             })}
           </div>
+
+          {/* Right side: Language Switcher */}
+          <LanguageSwitcher />
         </div>
       </nav>
 
