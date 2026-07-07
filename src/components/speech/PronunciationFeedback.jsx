@@ -134,16 +134,40 @@ export default function PronunciationFeedback({ feedback }) {
           </p>
         </div>
 
-        {/* Missing words */}
-        {feedback.missing_words?.length > 0 && (
-          <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '12px', padding: '14px 16px' }}>
-            <p style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 6px' }}>Missing words</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-              {feedback.missing_words.map((w, i) => (
-                <span key={i} style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', padding: '4px 10px', color: '#fca5a5', fontSize: '14px', fontWeight: '600' }}>
-                  {w}
-                </span>
-              ))}
+        {/* Word Breakdown */}
+        {feedback.word_breakdown?.length > 0 && (
+          <div style={{ background: 'var(--bg-elevated)', borderRadius: '12px', padding: '14px 16px' }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 10px' }}>Word Breakdown</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {feedback.word_breakdown.map((item, i) => {
+                let itemBg, itemBorder, itemText, icon;
+                if (item.status === "correct") {
+                  itemBg = "rgba(46,204,113,0.1)"; itemBorder = "rgba(46,204,113,0.3)"; itemText = "#2ecc71"; icon = "✅";
+                } else if (item.status === "mispronounced") {
+                  itemBg = "rgba(250,204,21,0.1)"; itemBorder = "rgba(250,204,21,0.3)"; itemText = "#facc15"; icon = "⚠️";
+                } else {
+                  itemBg = "rgba(239,68,68,0.1)"; itemBorder = "rgba(239,68,68,0.3)"; itemText = "#ef4444"; icon = "❌";
+                }
+
+                return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: itemBg, border: `1px solid ${itemBorder}`, borderRadius: '8px', padding: '8px 12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '14px' }}>{icon}</span>
+                      <span style={{ color: 'var(--text-primary)', fontSize: '15px', fontWeight: '600' }}>{item.word}</span>
+                    </div>
+                    {item.status === "mispronounced" && item.spoken_as && (
+                      <div style={{ fontSize: '12px', color: itemText, background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '4px' }}>
+                        Heard: <em>{item.spoken_as}</em>
+                      </div>
+                    )}
+                    {item.status === "missing" && (
+                      <div style={{ fontSize: '12px', color: itemText, background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '4px' }}>
+                        Missing
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}

@@ -21,6 +21,7 @@ export default defineSchema({
     phonetics: v.optional(v.string()),
     difficulty: v.optional(v.string()),
     description: v.optional(v.string()),
+    displayPhrase: v.optional(v.string()),
   }),
 
   assessments: defineTable({

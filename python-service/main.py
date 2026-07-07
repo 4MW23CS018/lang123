@@ -47,7 +47,7 @@ def assess_audio():
         print(f"[DEBUG] file size: {os.path.getsize(tmp_path)} bytes")
 
         transcription = transcribe(tmp_path, lang_code)
-        accuracy, missing_words = assess(transcription, phrase)
+        accuracy, word_breakdown = assess(transcription, phrase)
 
         print(f"[DEBUG] transcription: '{transcription}'")
         print(f"[DEBUG] accuracy: {accuracy}%")
@@ -55,7 +55,7 @@ def assess_audio():
         return jsonify({
             'transcription': transcription,
             'accuracy': accuracy,
-            'missing_words': missing_words
+            'word_breakdown': word_breakdown
         })
     except Exception as e:
         print(f"[ERROR] {e}")
