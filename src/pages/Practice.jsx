@@ -10,23 +10,29 @@ export default function Practice() {
 
   if (!lesson || !userId) return (
     <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#6b7280' }}>Loading practice session...</p>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ width: 36, height: 36, border: '2.5px solid var(--border-subtle)', borderTopColor: 'var(--purple)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
+        <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading practice…</p>
+      </div>
     </div>
   );
 
   return (
-    <div style={{ padding: '32px', maxWidth: '680px', margin: '0 auto' }}>
-      <span style={{ display: 'inline-block', background: 'rgba(46,204,113,0.12)', border: '1px solid rgba(46,204,113,0.25)', borderRadius: '999px', padding: '4px 14px', fontSize: '12px', color: '#2ecc71', fontWeight: '600', marginBottom: '16px' }}>
-        {lesson.language}
-      </span>
-      <h1 style={{ fontSize: '28px', fontWeight: '800', color: '#fff', margin: '0 0 6px', letterSpacing: '-0.5px' }}>Practice: {lesson.title}</h1>
-      <p style={{ color: '#9ca3af', fontSize: '14px', margin: '0 0 28px' }}>Listen, repeat, and get scored on your pronunciation.</p>
-      <div style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', padding: '36px', position: 'relative', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }}>
-        <div style={{ position: 'absolute', top: '-50px', left: '-50px', width: '160px', height: '160px', background: 'rgba(46,204,113,0.1)', borderRadius: '50%', filter: 'blur(60px)', pointerEvents: 'none' }} />
-        <p style={{ fontSize: '11px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 24px', position: 'relative', zIndex: 1 }}>Pronunciation Challenge</p>
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <SpeechRecorder phrase={lesson.phrase} language={lesson.language} userId={userId} lessonId={lesson._id} />
-        </div>
+    <div style={{ padding: '32px 24px', maxWidth: 640, margin: '0 auto' }}>
+      <div style={{ animation: 'fadeUp 0.4s var(--ease-out) both', marginBottom: 20 }}>
+        <span style={{ display: 'inline-block', background: 'var(--purple-bg)', border: '1px solid var(--purple-border)', borderRadius: 999, padding: '4px 14px', fontSize: 12, color: 'var(--purple)', fontWeight: 600, marginBottom: 12, textTransform: 'capitalize' }}>{lesson.language}</span>
+        <h1 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px', letterSpacing: '-0.5px' }}>Practice: {lesson.title}</h1>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 14, margin: 0 }}>Listen, repeat, and get scored on your pronunciation.</p>
+      </div>
+
+      <div style={{
+        background: 'var(--bg-card)', border: '1px solid var(--border-subtle)',
+        borderRadius: 20, padding: '32px 28px',
+        boxShadow: 'var(--card-shadow)',
+        animation: 'fadeUp 0.45s var(--ease-out) 100ms both',
+      }}>
+        <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', display: 'block', marginBottom: 20 }}>Pronunciation Challenge</span>
+        <SpeechRecorder phrase={lesson.phrase} language={lesson.language} userId={userId} lessonId={lesson._id} phonetics={lesson.phonetics} />
       </div>
     </div>
   );

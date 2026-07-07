@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import ListenButton from "../components/speech/ListenButton";
 
 export default function LessonDetail() {
   const { id } = useParams();
@@ -9,29 +10,56 @@ export default function LessonDetail() {
 
   if (!lesson || !userId) return (
     <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#6b7280' }}>Loading...</p>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ width: 36, height: 36, border: '2.5px solid var(--border-subtle)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
+        <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading lesson…</p>
+      </div>
     </div>
   );
 
   return (
-    <div style={{ padding: '32px', maxWidth: '680px', margin: '0 auto' }}>
-      <div style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', padding: '40px', position: 'relative', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }}>
-        <div style={{ position: 'absolute', bottom: '-60px', right: '-60px', width: '180px', height: '180px', background: 'rgba(46,204,113,0.12)', borderRadius: '50%', filter: 'blur(70px)', pointerEvents: 'none' }} />
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <span style={{ display: 'inline-block', background: 'rgba(46,204,113,0.12)', border: '1px solid rgba(46,204,113,0.25)', borderRadius: '999px', padding: '4px 14px', fontSize: '12px', color: '#2ecc71', fontWeight: '600', marginBottom: '20px' }}>
-            {lesson.language}
-          </span>
-          <h1 style={{ fontSize: '28px', fontWeight: '800', color: '#fff', margin: '0 0 24px', letterSpacing: '-0.5px' }}>{lesson.title}</h1>
-          <p style={{ fontSize: '11px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 12px' }}>Lesson Phrase</p>
-          <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '20px 24px', marginBottom: '32px' }}>
-            <p style={{ color: '#e5e7eb', fontSize: '18px', margin: 0, lineHeight: 1.6 }}>{lesson.phrase}</p>
+    <div style={{ padding: '32px 24px', maxWidth: 640, margin: '0 auto' }}>
+      <div style={{
+        background: 'var(--bg-card)', border: '1px solid var(--border-subtle)',
+        borderRadius: 20, padding: '36px 32px',
+        boxShadow: 'var(--card-shadow)',
+        animation: 'fadeUp 0.45s var(--ease-out) both',
+      }}>
+        <span style={{ display: 'inline-block', background: 'var(--accent-bg)', border: '1px solid var(--accent-border)', borderRadius: 999, padding: '4px 14px', fontSize: 12, color: 'var(--accent)', fontWeight: 600, marginBottom: 18, textTransform: 'capitalize' }}>{lesson.language}</span>
+
+        <h1 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 24px', letterSpacing: '-0.5px' }}>{lesson.title}</h1>
+
+        <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', display: 'block', marginBottom: 10 }}>Lesson Phrase</span>
+        <div style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)', borderRadius: 14, padding: '22px 20px', marginBottom: 28 }}>
+          <p style={{ color: 'var(--text-primary)', fontSize: 20, margin: '0 0 8px', lineHeight: 1.7, fontWeight: 500 }}>{lesson.phrase}</p>
+          {lesson.phonetics && (
+            <div style={{
+              background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.15)',
+              borderRadius: 10, padding: '10px 14px', marginBottom: 12,
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              <span style={{ fontSize: 14 }}>🗣</span>
+              <span style={{ color: '#a5b4fc', fontSize: 15, fontWeight: 600, fontStyle: 'italic', letterSpacing: '0.5px' }}>
+                {lesson.phonetics}
+              </span>
+            </div>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <ListenButton phrase={lesson.phrase} language={lesson.language} size={42} />
+            <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>Listen to pronunciation</span>
           </div>
-          <Link to={`/practice/${lesson._id}`} style={{ display: 'block', width: '100%', padding: '14px', background: '#2ecc71', color: '#000', fontWeight: '700', fontSize: '16px', borderRadius: '12px', textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box' }}
-            onMouseEnter={e => e.currentTarget.style.background = '#27ae60'}
-            onMouseLeave={e => e.currentTarget.style.background = '#2ecc71'}>
-            Start Practice Session →
-          </Link>
         </div>
+
+        <Link to={`/practice/${lesson._id}`} style={{
+          display: 'block', width: '100%', padding: 15, boxSizing: 'border-box',
+          background: 'var(--accent)', color: '#fff',
+          fontWeight: 700, fontSize: 16, borderRadius: 14, textAlign: 'center',
+          transition: 'all 0.25s var(--ease-out)', textDecoration: 'none',
+        }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.background = 'var(--accent-hover)'; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.background = 'var(--accent)'; }}>
+          Start Practice Session →
+        </Link>
       </div>
     </div>
   );

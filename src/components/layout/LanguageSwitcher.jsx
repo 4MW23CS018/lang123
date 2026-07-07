@@ -1,6 +1,3 @@
-// src/components/LanguageSwitcher.jsx
-// Place this in your Navbar — it drops down over the page content.
-
 import { useState, useRef, useEffect } from "react";
 import { useLanguage, SOUTH_INDIAN_LANGUAGES } from "../hooks/useLanguage";
 
@@ -9,7 +6,6 @@ export default function LanguageSwitcher() {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
-  // Close on outside click
   useEffect(() => {
     const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
     document.addEventListener("mousedown", handler);
@@ -18,68 +14,53 @@ export default function LanguageSwitcher() {
 
   return (
     <div ref={ref} style={{ position: "relative" }}>
-      {/* Trigger button */}
-      <button
-        onClick={() => setOpen(o => !o)}
+      <button onClick={() => setOpen(o => !o)}
         style={{
-          display: "flex", alignItems: "center", gap: "8px",
-          background: open ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.04)",
-          border: `1px solid ${open ? current.color + "50" : "rgba(255,255,255,0.1)"}`,
-          borderRadius: "10px", padding: "7px 12px",
-          color: "#fff", fontSize: "13px", fontWeight: "600",
+          display: "flex", alignItems: "center", gap: 7,
+          background: open ? "var(--bg-elevated)" : "transparent",
+          border: `1.5px solid ${open ? 'var(--border-strong)' : 'var(--border-default)'}`,
+          borderRadius: 10, padding: "6px 12px",
+          color: "var(--text-primary)", fontSize: 13, fontWeight: 600,
           cursor: "pointer", transition: "all 0.15s",
         }}
-        onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
-        onMouseLeave={e => { if (!open) e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
-      >
+        onMouseEnter={e => e.currentTarget.style.background = "var(--bg-elevated)"}
+        onMouseLeave={e => { if (!open) e.currentTarget.style.background = "transparent"; }}>
         <span>{current.emoji}</span>
         <span style={{ color: current.color }}>{current.label}</span>
-        <span style={{ color: "#6b7280", fontSize: "10px", marginLeft: "2px", transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s", display: "inline-block" }}>▼</span>
+        <span style={{ color: "var(--text-muted)", fontSize: 10, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s", display: "inline-block" }}>▼</span>
       </button>
 
-      {/* Dropdown */}
       {open && (
         <div style={{
-          position: "absolute", top: "calc(100% + 8px)", right: 0,
-          background: "rgba(15,15,20,0.97)",
-          backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
-          border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: "14px", padding: "6px",
-          width: "200px", zIndex: 1000,
-          boxShadow: "0 20px 40px rgba(0,0,0,0.5)",
-          animation: "dropIn 0.15s ease",
+          position: "absolute", top: "calc(100% + 6px)", right: 0,
+          background: "var(--bg-card)", border: "1px solid var(--border-default)",
+          borderRadius: 14, padding: 6, width: 210, zIndex: 1000,
+          boxShadow: "var(--card-shadow-hover)",
+          animation: "dropIn 0.2s cubic-bezier(0.16,1,0.3,1) both",
         }}>
-          <p style={{ color: "#4b5563", fontSize: "10px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "1px", padding: "6px 10px 4px", margin: 0 }}>
-            Switch Language
-          </p>
+          <p style={{ color: "var(--text-muted)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", padding: "6px 10px 4px", margin: 0 }}>Switch Language</p>
           {SOUTH_INDIAN_LANGUAGES.map(lang => {
             const isActive = lang.label === current.label;
             return (
-              <button
-                key={lang.code}
-                onClick={() => { setLanguage(lang.label); setOpen(false); }}
+              <button key={lang.code} onClick={() => { setLanguage(lang.label); setOpen(false); }}
                 style={{
-                  display: "flex", alignItems: "center", gap: "10px",
-                  width: "100%", padding: "9px 10px", border: "none",
+                  display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 10px", border: "none",
                   background: isActive ? lang.color + "15" : "transparent",
-                  borderRadius: "9px", cursor: "pointer", transition: "background 0.12s",
-                  textAlign: "left",
+                  borderRadius: 9, cursor: "pointer", transition: "background 0.12s", textAlign: "left",
                 }}
-                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
-                onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
-              >
-                <span style={{ fontSize: "15px" }}>{lang.emoji}</span>
+                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "var(--bg-elevated)"; }}
+                onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}>
+                <span style={{ fontSize: 15 }}>{lang.emoji}</span>
                 <div style={{ flex: 1 }}>
-                  <p style={{ color: isActive ? lang.color : "#d1d5db", fontSize: "13px", fontWeight: isActive ? "700" : "500", margin: 0 }}>{lang.label}</p>
-                  <p style={{ color: "#6b7280", fontSize: "11px", margin: 0 }}>{lang.script}</p>
+                  <p style={{ color: isActive ? lang.color : "var(--text-primary)", fontSize: 13, fontWeight: isActive ? 700 : 500, margin: 0 }}>{lang.label}</p>
+                  <p style={{ color: "var(--text-muted)", fontSize: 11, margin: 0 }}>{lang.script}</p>
                 </div>
-                {isActive && <span style={{ color: lang.color, fontSize: "14px" }}>✓</span>}
+                {isActive && <span style={{ color: lang.color, fontSize: 14 }}>✓</span>}
               </button>
             );
           })}
         </div>
       )}
-      <style>{`@keyframes dropIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }`}</style>
     </div>
   );
 }

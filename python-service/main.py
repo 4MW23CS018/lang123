@@ -1,8 +1,10 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import base64
 import os
+import io
 import tempfile
+from gtts import gTTS
 from whisper_service import transcribe
 from pronunciation import assess
 
@@ -13,7 +15,9 @@ LANGUAGE_CODES = {
     "kannada": "kn",
     "tamil": "ta",
     "telugu": "te",
-    "malayalam": "ml"
+    "malayalam": "ml",
+    "tulu": "kn",     # Tulu uses Kannada script; closest TTS voice
+    "kodava": "kn",   # Kodava uses Kannada script; closest TTS voice
 }
 
 @app.route('/assess', methods=['POST'])
@@ -59,6 +63,34 @@ def assess_audio():
     finally:
         if tmp_path and os.path.exists(tmp_path):
             os.remove(tmp_path)
+
+@app.route('/tts', methods=['POST'])
+def text_to_speech():
+    """Generate audio pronunciation for a phrase in the given language."""
+    data = request.json
+    phrase = data.get('phrase', '')
+    language = data.get('language', '').lower()
+
+    if not phrase:
+        return jsonify({'error': 'No phrase provided'}), 400
+
+    lang_code = LANGUAGE_CODES.get(language, language[:2])
+
+    try:
+        tts = gTTS(text=phrase, lang=lang_code, slow=True)
+        audio_buffer = io.BytesIO()
+        tts.write_to_fp(audio_buffer)
+        audio_buffer.seek(0)
+        return send_file(
+            audio_buffer,
+            mimetype='audio/mpeg',
+            as_attachment=False,
+            download_name='pronunciation.mp3'
+        )
+    except Exception as e:
+        print(f"[TTS ERROR] {e}")
+        return jsonify({'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)

@@ -18,6 +18,7 @@ export default defineSchema({
     title: v.string(),
     language: v.string(),
     phrase: v.string(),
+    phonetics: v.optional(v.string()),
     difficulty: v.optional(v.string()),
     description: v.optional(v.string()),
   }),

@@ -1,7 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
 import LanguageSwitcher from './layout/LanguageSwitcher';
+import { useTheme } from './hooks/useTheme';
 
-const NAV_LINKS = [
+const NAV = [
   { to: '/dashboard', label: 'Dashboard', icon: '🏠' },
   { to: '/lessons', label: 'Lessons', icon: '📚' },
   { to: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
@@ -9,80 +10,68 @@ const NAV_LINKS = [
 ];
 
 export default function Layout({ children }) {
-  const location = useLocation();
+  const loc = useLocation();
+  const { isDark, toggle } = useTheme();
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Navbar */}
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-base)', transition: 'background 0.3s ease' }}>
       <nav style={{
         position: 'sticky', top: 0, zIndex: 100,
-        background: 'rgba(10,10,20,0.85)',
-        backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(255,255,255,0.07)',
-        boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
+        background: isDark ? 'rgba(15,15,26,0.9)' : 'rgba(250,248,245,0.92)',
+        backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+        borderBottom: '1px solid var(--border-subtle)',
+        transition: 'background 0.3s ease',
       }}>
-        <div style={{
-          maxWidth: '1100px', margin: '0 auto',
-          padding: '0 24px', height: '64px',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        }}>
-          {/* Logo */}
-          <Link to="/dashboard" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '34px', height: '34px', borderRadius: '10px',
-              background: 'linear-gradient(135deg, #2ecc71, #27ae60)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '18px', boxShadow: '0 0 16px rgba(46,204,113,0.3)',
-            }}>🌐</div>
-            <span style={{ fontSize: '18px', fontWeight: '800', color: '#fff', letterSpacing: '-0.5px' }}>
-              Lang<span style={{ color: '#2ecc71' }}>Bridge</span>
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Link to="/dashboard" style={{ textDecoration: 'none' }}>
+            <span style={{ fontSize: 19, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
+              Lang<span style={{ color: 'var(--accent)' }}>Bridge</span>
             </span>
           </Link>
 
-          {/* Nav Links */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            {NAV_LINKS.map(({ to, label, icon }) => {
-              const active = location.pathname.startsWith(to) ||
-                             (to === '/lessons' && location.pathname.startsWith('/lesson/')) ||
-                             (to === '/lessons' && location.pathname.startsWith('/practice/'));
-
+          <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {NAV.map(({ to, label, icon }) => {
+              const active = loc.pathname.startsWith(to) || (to === '/lessons' && (loc.pathname.startsWith('/lesson/') || loc.pathname.startsWith('/practice/')));
               return (
                 <Link key={to} to={to} style={{
-                  display: 'flex', alignItems: 'center', gap: '6px',
-                  padding: '8px 14px', borderRadius: '10px', textDecoration: 'none',
-                  fontSize: '14px', fontWeight: active ? '700' : '500',
-                  color: active ? '#2ecc71' : '#9ca3af',
-                  background: active ? 'rgba(46,204,113,0.12)' : 'transparent',
-                  border: active ? '1px solid rgba(46,204,113,0.2)' : '1px solid transparent',
-                  transition: 'all 0.15s',
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '7px 14px', borderRadius: 10, textDecoration: 'none',
+                  fontSize: 14, fontWeight: active ? 700 : 500,
+                  color: active ? 'var(--accent)' : 'var(--text-secondary)',
+                  background: active ? 'var(--accent-bg)' : 'transparent',
+                  transition: 'all 0.2s cubic-bezier(0.16,1,0.3,1)',
                 }}
-                  onMouseEnter={e => { if (!active) { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; } }}
-                  onMouseLeave={e => { if (!active) { e.currentTarget.style.color = '#9ca3af'; e.currentTarget.style.background = 'transparent'; } }}
-                >
-                  <span style={{ fontSize: '15px' }}>{icon}</span>
-                  <span>{label}</span>
+                  onMouseEnter={e => { if (!active) { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.background = 'var(--bg-elevated)'; } }}
+                  onMouseLeave={e => { if (!active) { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; } }}>
+                  <span style={{ fontSize: 15 }}>{icon}</span><span>{label}</span>
                 </Link>
               );
             })}
           </div>
 
-          {/* Right side: Language Switcher */}
-          <LanguageSwitcher />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {/* Theme toggle */}
+            <button onClick={toggle} title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: 'var(--bg-elevated)', border: '1px solid var(--border-default)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 16, cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-subtle)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-elevated)'}>
+              {isDark ? '☀️' : '🌙'}
+            </button>
+            <LanguageSwitcher />
+          </div>
         </div>
       </nav>
 
-      {/* Page Content */}
-      <main style={{ flex: 1 }}>
-        {children}
-      </main>
+      <main style={{ flex: 1 }}>{children}</main>
 
-      {/* Footer */}
-      <footer style={{
-        borderTop: '1px solid rgba(255,255,255,0.06)',
-        padding: '20px 24px', textAlign: 'center',
-        color: '#4b5563', fontSize: '13px',
-      }}>
-        © {new Date().getFullYear()} LangBridge. All rights reserved.
+      <footer style={{ borderTop: '1px solid var(--border-subtle)', padding: '20px 24px', textAlign: 'center' }}>
+        <span style={{ color: 'var(--text-faint)', fontSize: 13 }}>© {new Date().getFullYear()} LangBridge</span>
       </footer>
     </div>
   );
