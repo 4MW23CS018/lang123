@@ -21,3 +21,22 @@ export const getUserProgress = query({
     };
   },
 });
+
+export const getCompletedLessonIds = query({
+  args: { userId: v.optional(v.string()) }, // accept string id from localstorage
+  handler: async (ctx, args) => {
+    if (!args.userId) return [];
+    const assessments = await ctx.db
+      .query("assessments")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .collect();
+
+    // A lesson is completed if the user got >= 80% accuracy on it
+    const completedLessonIds = [
+      ...new Set(
+        assessments.filter((a) => a.accuracy >= 80).map((a) => a.lessonId)
+      ),
+    ];
+    return completedLessonIds;
+  },
+});

@@ -47,19 +47,23 @@ def assess_audio():
         print(f"[DEBUG] file size: {os.path.getsize(tmp_path)} bytes")
 
         transcription = transcribe(tmp_path, lang_code)
-        accuracy, word_breakdown = assess(transcription, phrase)
+        phonetics = data.get('phonetics', '')
+        accuracy, word_breakdown, ai_tip = assess(transcription, phrase, phonetics, language)
 
-        print(f"[DEBUG] transcription: '{transcription}'")
+        safe_transcription = transcription.encode('ascii', 'backslashreplace').decode('ascii')
+        print(f"[DEBUG] transcription: '{safe_transcription}'")
         print(f"[DEBUG] accuracy: {accuracy}%")
 
         return jsonify({
             'transcription': transcription,
             'accuracy': accuracy,
-            'word_breakdown': word_breakdown
+            'word_breakdown': word_breakdown,
+            'ai_tip': ai_tip
         })
     except Exception as e:
-        print(f"[ERROR] {e}")
-        return jsonify({'error': str(e)}), 500
+        safe_error = str(e).encode('ascii', 'backslashreplace').decode('ascii')
+        print(f"[ERROR] {safe_error}")
+        return jsonify({'error': safe_error}), 500
     finally:
         if tmp_path and os.path.exists(tmp_path):
             os.remove(tmp_path)

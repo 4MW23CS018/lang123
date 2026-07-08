@@ -7,11 +7,11 @@
 
 :root {
   /* ── Dark mode (default) ── */
-  --bg-base: #0f0f1a;
-  --bg-card: #1a1a2e;
-  --bg-elevated: #22223a;
-  --bg-subtle: #16162a;
-  --bg-input: #16162a;
+  --bg-base: #0a0a12;
+  --bg-card: rgba(26, 26, 46, 0.6);
+  --bg-elevated: rgba(34, 34, 58, 0.7);
+  --bg-subtle: rgba(22, 22, 42, 0.65);
+  --bg-input: rgba(22, 22, 42, 0.65);
 
   --text-primary: #f0ede8;
   --text-secondary: #a0a0b2;
@@ -41,8 +41,11 @@
   --sky: #0ea5e9;
   --sky-bg: rgba(14,165,233,0.1);
 
-  --card-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  --card-shadow-hover: 0 12px 32px rgba(0,0,0,0.4);
+  --card-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  --card-shadow-hover: 0 12px 32px rgba(0,0,0,0.45);
+  
+  /* Glossy inner top edge */
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 
   /* ── Typography ── */
   --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -63,18 +66,18 @@
 /* ── Light mode overrides ── */
 [data-theme="light"] {
   --bg-base: #faf8f5;
-  --bg-card: #ffffff;
-  --bg-elevated: #f5f0eb;
-  --bg-subtle: #f0ede8;
-  --bg-input: #f5f0eb;
+  --bg-card: rgba(255, 255, 255, 0.65);
+  --bg-elevated: rgba(255, 255, 255, 0.85);
+  --bg-subtle: rgba(240, 237, 232, 0.7);
+  --bg-input: rgba(245, 240, 235, 0.7);
 
   --text-primary: #1a1a2e;
   --text-secondary: #5a5a72;
   --text-muted: #8e8ea0;
   --text-faint: #b5b5c3;
 
-  --border-subtle: rgba(0,0,0,0.06);
-  --border-default: rgba(0,0,0,0.1);
+  --border-subtle: rgba(0,0,0,0.05);
+  --border-default: rgba(0,0,0,0.08);
   --border-strong: rgba(0,0,0,0.15);
 
   --accent-bg: rgba(34,197,94,0.08);
@@ -86,8 +89,10 @@
   --coral-bg: rgba(244,63,94,0.08);
   --sky-bg: rgba(14,165,233,0.08);
 
-  --card-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --card-shadow: 0 4px 16px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
   --card-shadow-hover: 0 12px 32px rgba(0,0,0,0.08);
+  
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -229,6 +234,69 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
   box-shadow: 0 1px 3px rgba(0,0,0,0.15); transition: left 0.3s var(--ease-spring);
 }
 .toggle-switch.active::after { left: 22px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   Glassmorphism Utilities
+   ═══════════════════════════════════════════════════════════════ */
+.glass-panel {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--card-shadow), var(--glass-highlight);
+  border-radius: var(--radius-xl);
+}
+
+.glass-card {
+  background: var(--bg-elevated);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--card-shadow), var(--glass-highlight);
+  border-radius: var(--radius-lg);
+  transition: transform 0.25s var(--ease-spring), box-shadow 0.25s var(--ease-out), background 0.25s var(--ease-out);
+}
+.glass-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--card-shadow-hover), var(--glass-highlight);
+  background: var(--bg-card);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Premium Animated Borders
+   ═══════════════════════════════════════════════════════════════ */
+.border-demo {
+  width: 60px; height: 60px; border-radius: 50%;
+  background: var(--bg-elevated); display: flex;
+  align-items: center; justify-content: center;
+  font-size: 24px; position: relative;
+}
+.border-neon {
+  box-shadow: 0 0 10px #0ff, 0 0 20px #f0f, inset 0 0 10px #0ff;
+  animation: neonPulse 2s infinite alternate;
+}
+@keyframes neonPulse {
+  0% { box-shadow: 0 0 5px #0ff, 0 0 10px #f0f, inset 0 0 5px #0ff; }
+  100% { box-shadow: 0 0 20px #0ff, 0 0 40px #f0f, inset 0 0 20px #0ff; }
+}
+
+.border-gold {
+  position: relative;
+}
+.border-gold::before {
+  content: ""; position: absolute; inset: -4px; border-radius: inherit;
+  background: conic-gradient(from 0deg, #fef08a, #ca8a04, #fef08a, #ca8a04, #fef08a);
+  animation: spin 3s linear infinite; z-index: -1;
+}
+
+.border-fire {
+  box-shadow: 0 0 15px #f97316, 0 0 30px #ef4444;
+  animation: firePulse 0.5s infinite alternate;
+}
+@keyframes firePulse {
+  0% { box-shadow: 0 0 10px #f97316, 0 0 20px #ef4444, inset 0 0 10px #f97316; }
+  100% { box-shadow: 0 0 20px #f97316, 0 0 40px #ef4444, inset 0 0 20px #f97316; }
+}
 
 /* ═══════════════════════════════════════════════════════════════
    Reduced Motion

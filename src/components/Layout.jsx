@@ -1,10 +1,14 @@
 import { Link, useLocation } from 'react-router-dom';
 import LanguageSwitcher from './layout/LanguageSwitcher';
 import { useTheme } from './hooks/useTheme';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 
 const NAV = [
   { to: '/dashboard', label: 'Dashboard', icon: '🏠' },
+  { to: '/basics', label: 'Basics', icon: '🔤' },
   { to: '/lessons', label: 'Lessons', icon: '📚' },
+  { to: '/shop', label: 'Shop', icon: '💎' },
   { to: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
   { to: '/profile', label: 'Profile', icon: '👤' },
 ];
@@ -12,6 +16,8 @@ const NAV = [
 export default function Layout({ children }) {
   const loc = useLocation();
   const { isDark, toggle } = useTheme();
+  const userId = localStorage.getItem('userId');
+  const user = useQuery(api.users.get, userId ? { userId } : "skip");
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-base)', transition: 'background 0.3s ease' }}>
@@ -50,6 +56,13 @@ export default function Layout({ children }) {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            
+            {user && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: 'var(--bg-elevated)', borderRadius: 12, border: '1px solid #0ea5e955', color: '#0ea5e9', fontWeight: 700, fontSize: 14 }}>
+                <span style={{ fontSize: 14 }}>💎</span> {user.gems || 0}
+              </div>
+            )}
+
             {/* Theme toggle */}
             <button onClick={toggle} title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
               style={{

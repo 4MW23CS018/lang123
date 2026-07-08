@@ -19,10 +19,8 @@ export default function LessonDetail() {
 
   return (
     <div style={{ padding: '32px 24px', maxWidth: 640, margin: '0 auto' }}>
-      <div style={{
-        background: 'var(--bg-card)', border: '1px solid var(--border-subtle)',
-        borderRadius: 20, padding: '36px 32px',
-        boxShadow: 'var(--card-shadow)',
+      <div className="glass-panel" style={{
+        padding: '36px 32px',
         animation: 'fadeUp 0.45s var(--ease-out) both',
       }}>
         <span style={{ display: 'inline-block', background: 'var(--accent-bg)', border: '1px solid var(--accent-border)', borderRadius: 999, padding: '4px 14px', fontSize: 12, color: 'var(--accent)', fontWeight: 600, marginBottom: 18, textTransform: 'capitalize' }}>{lesson.language}</span>

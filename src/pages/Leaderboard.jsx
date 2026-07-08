@@ -17,12 +17,12 @@ function PodiumCard({ user, rank }) {
       paddingTop: isFirst ? 0 : 24,
       opacity: 0, animation: `fadeUp 0.5s var(--ease-out) ${delay[rank]} forwards`,
     }}>
-      <div style={{
+      <div className={user.equippedBorder ? user.equippedBorder.replace(/_/g, '-') : ''} style={{
         width: isFirst ? 64 : 50, height: isFirst ? 64 : 50, borderRadius: '50%',
-        background: color + '18', border: `2px solid ${color}50`,
+        background: color + '18', border: user.equippedBorder ? 'none' : `2px solid ${color}50`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: isFirst ? 24 : 18, fontWeight: 800, color,
-        marginBottom: 6, transition: 'transform 0.2s',
+        marginBottom: 6, transition: 'transform 0.2s', position: 'relative', zIndex: 1,
       }}
         onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
         onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
@@ -58,7 +58,7 @@ function ListRow({ user, index }) {
       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <span style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', background: 'var(--bg-elevated)', borderRadius: 7, flexShrink: 0 }}>{rank}</span>
-        <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', flexShrink: 0 }}>{user.name?.[0]?.toUpperCase()}</div>
+        <div className={user.equippedBorder ? user.equippedBorder.replace(/_/g, '-') : ''} style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--bg-elevated)', border: user.equippedBorder ? 'none' : '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', flexShrink: 0, position: 'relative', zIndex: 1 }}>{user.name?.[0]?.toUpperCase()}</div>
         <span style={{ fontWeight: 600, color: 'var(--text-secondary)', fontSize: 14 }}>{user.name}</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -94,10 +94,8 @@ export default function Leaderboard() {
 
       {/* Rest */}
       {rest.length > 0 && (
-        <div style={{
-          background: 'var(--bg-card)', border: '1px solid var(--border-subtle)',
+        <div className="glass-panel" style={{
           borderRadius: '0 0 16px 16px', overflow: 'hidden',
-          boxShadow: 'var(--card-shadow)',
           opacity: 0, animation: 'fadeUp 0.4s var(--ease-out) 500ms forwards',
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 18px', borderBottom: '1px solid var(--border-subtle)' }}>

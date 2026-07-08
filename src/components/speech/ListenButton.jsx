@@ -13,6 +13,7 @@ export default function ListenButton({ phrase, language, size = 44 }) {
   const [state, setState] = useState("idle"); // idle | loading | playing
   const audioRef = useRef(null);
   const blobUrlRef = useRef(null);
+  const cachedPhraseRef = useRef(null);
 
   const play = useCallback(async () => {
     // If already playing, stop it
@@ -27,7 +28,7 @@ export default function ListenButton({ phrase, language, size = 44 }) {
 
     try {
       // If we already fetched this phrase, reuse the cached blob URL
-      if (!blobUrlRef.current) {
+      if (!blobUrlRef.current || cachedPhraseRef.current !== phrase) {
         const res = await fetch("http://localhost:5000/tts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -36,8 +37,10 @@ export default function ListenButton({ phrase, language, size = 44 }) {
 
         if (!res.ok) throw new Error(`TTS error: ${res.status}`);
 
+        if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
         const blob = await res.blob();
         blobUrlRef.current = URL.createObjectURL(blob);
+        cachedPhraseRef.current = phrase;
       }
 
       const audio = new Audio(blobUrlRef.current);

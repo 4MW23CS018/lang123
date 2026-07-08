@@ -1,4 +1,4 @@
-import { query } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
 export const get = query({
@@ -15,4 +15,17 @@ export const getLeaderboard = query({
     users.sort((a, b) => (b.totalXp || b.xp || 0) - (a.totalXp || a.xp || 0));
     return users.slice(0, 10);
   },
-});
+});
+
+export const updateDailyGoal = mutation({
+  args: {
+    userId: v.id("users"),
+    dailyGoal: v.number(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.userId, {
+      dailyGoal: args.dailyGoal,
+    });
+  },
+});
+

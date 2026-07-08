@@ -42,6 +42,13 @@ export const saveAssessment = mutation({
       xpEarned,
     });
 
+    // Update SRS schedule
+    await ctx.scheduler.runAfter(0, internal.srs.updateReview, {
+      userId: args.userId,
+      lessonId: args.lessonId,
+      accuracy: args.accuracy,
+    });
+
     return { xpEarned };
   },
 });

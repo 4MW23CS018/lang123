@@ -6,7 +6,7 @@ import PronunciationFeedback from "./PronunciationFeedback";
 import WaveformVisualizer from "./WaveformVisualizer";
 import ListenButton from "./ListenButton";
 
-export default function SpeechRecorder({ phrase, language, userId, lessonId, phonetics }) {
+export default function SpeechRecorder({ phrase, displayPhrase, language, userId, lessonId, phonetics, onComplete }) {
   const [recording, setRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
   const [feedback, setFeedback] = useState(null);
@@ -61,7 +61,7 @@ export default function SpeechRecorder({ phrase, language, userId, lessonId, pho
       const flaskResponse = await fetch("http://localhost:5000/assess", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ audio_base64: base64, phrase, language }),
+        body: JSON.stringify({ audio_base64: base64, phrase, phonetics, language }),
       });
 
       if (!flaskResponse.ok) {
@@ -86,6 +86,74 @@ export default function SpeechRecorder({ phrase, language, userId, lessonId, pho
     }
   };
 
+  if (feedback) {
+    const isSuccess = feedback.accuracy >= 80;
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 24, animation: 'fadeUp 0.4s var(--ease-out) forwards' }}>
+
+        {isSuccess ? (
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 80, animation: 'bouncePulse 2s infinite ease-in-out' }}>🎉</div>
+            <h2 style={{ color: '#22c55e', fontSize: 32, fontWeight: 800, margin: '16px 0 8px' }}>Awesome Job!</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 18, margin: '0 0 24px' }}>Accuracy: {Math.round(feedback.accuracy)}%</p>
+
+            <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginBottom: 32 }}>
+              <div style={{ background: 'var(--bg-elevated)', padding: '12px 24px', borderRadius: 16, border: '2px solid #eab308' }}>
+                <span style={{ fontSize: 24, display: 'block', marginBottom: 4 }}>⭐</span>
+                <span style={{ color: '#eab308', fontWeight: 800, fontSize: 18 }}>+{feedback.xpEarned} XP</span>
+              </div>
+              <div style={{ background: 'var(--bg-elevated)', padding: '12px 24px', borderRadius: 16, border: '2px solid #0ea5e9' }}>
+                <span style={{ fontSize: 24, display: 'block', marginBottom: 4 }}>💎</span>
+                <span style={{ color: '#0ea5e9', fontWeight: 800, fontSize: 18 }}>+{Math.max(1, Math.floor(feedback.xpEarned / 5))}</span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                if (onComplete) onComplete(true);
+                window.location.href = '/lessons';
+              }}
+              style={{
+                background: '#22c55e', color: '#fff', border: 'none', borderRadius: 16,
+                padding: '16px 48px', fontSize: 20, fontWeight: 800, cursor: 'pointer',
+                boxShadow: '0 6px 0 #16a34a', transition: 'all 0.1s'
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'none'}
+              onMouseDown={e => { e.currentTarget.style.transform = 'translateY(6px)'; e.currentTarget.style.boxShadow = 'none'; }}
+            >
+              CONTINUE
+            </button>
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 80 }}>😅</div>
+            <h2 style={{ color: '#ef4444', fontSize: 32, fontWeight: 800, margin: '16px 0 8px' }}>Keep Trying!</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 18, margin: '0 0 24px' }}>Accuracy: {Math.round(feedback.accuracy)}% (Need &gt;= 80%)</p>
+
+            <button
+              onClick={() => {
+                setFeedback(null);
+                setAudioBlob(null);
+              }}
+              style={{
+                background: '#ef4444', color: '#fff', border: 'none', borderRadius: 16,
+                padding: '16px 48px', fontSize: 20, fontWeight: 800, cursor: 'pointer',
+                boxShadow: '0 6px 0 #dc2626', transition: 'all 0.1s'
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'none'}
+              onMouseDown={e => { e.currentTarget.style.transform = 'translateY(6px)'; e.currentTarget.style.boxShadow = 'none'; }}
+            >
+              TRY AGAIN
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
       <style>{`
@@ -94,14 +162,16 @@ export default function SpeechRecorder({ phrase, language, userId, lessonId, pho
           100% { transform: scale(1.55); opacity: 0; }
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes bouncePulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.1); }
+        }
       `}</style>
 
       {/* ── Phrase display ── */}
-      <div style={{
+      <div className="glass-panel" style={{
         textAlign: 'center', padding: '32px 24px',
-        background: 'var(--bg-elevated)',
-        border: '1px solid var(--border-subtle)',
-        borderRadius: '20px', position: 'relative', overflow: 'hidden',
+        position: 'relative', overflow: 'hidden',
       }}>
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 0%, rgba(46,204,113,0.08), transparent 60%)', pointerEvents: 'none' }} />
         <p style={{ color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1.5px', margin: '0 0 16px', fontWeight: '700' }}>
@@ -110,13 +180,13 @@ export default function SpeechRecorder({ phrase, language, userId, lessonId, pho
         <p style={{ color: 'var(--text-secondary)', fontSize: '13px', margin: '0 0 10px', fontWeight: '500' }}>
           Listen &amp; repeat this phrase:
         </p>
-        {/* Large native script */}
+        {/* Large native script or fallback to phrase */}
         <p style={{
           color: 'var(--text-primary)', fontSize: 'clamp(28px, 5vw, 42px)',
           fontWeight: '800', margin: '0 0 8px', lineHeight: 1.3,
           letterSpacing: '-0.5px',
         }}>
-          {phrase}
+          {displayPhrase || phrase}
         </p>
         {/* Phonetics guide */}
         {phonetics && (
@@ -131,7 +201,7 @@ export default function SpeechRecorder({ phrase, language, userId, lessonId, pho
         {!phonetics && <div style={{ marginBottom: 18 }} />}
         {/* Listen button */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-          <ListenButton phrase={phrase} language={language} size={48} />
+          <ListenButton phrase={displayPhrase || phrase} language={language} size={48} />
           <span style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: '500' }}>Tap to hear pronunciation</span>
         </div>
       </div>
@@ -192,9 +262,8 @@ export default function SpeechRecorder({ phrase, language, userId, lessonId, pho
 
       {/* ── Recorded audio + submit ── */}
       {audioBlob && !recording && (
-        <div style={{
-          background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)',
-          borderRadius: '18px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px',
+        <div className="glass-panel" style={{
+          padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px',
         }}>
           <div>
             <p style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 8px' }}>Your recording</p>
@@ -225,11 +294,6 @@ export default function SpeechRecorder({ phrase, language, userId, lessonId, pho
             )}
           </button>
         </div>
-      )}
-
-      {/* ── Feedback ── */}
-      {feedback && (
-        <PronunciationFeedback feedback={feedback} />
       )}
     </div>
   );

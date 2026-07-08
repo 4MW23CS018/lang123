@@ -134,6 +134,18 @@ export default function PronunciationFeedback({ feedback }) {
           </p>
         </div>
 
+        {/* AI Tutor Tip */}
+        {feedback.ai_tip && (
+          <div style={{ background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.25)', borderRadius: '12px', padding: '16px' }}>
+            <p style={{ color: 'var(--purple)', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>🤖</span> Tutor's Tip
+            </p>
+            <p style={{ color: 'var(--text-primary)', fontSize: '15px', fontWeight: '500', margin: 0, fontStyle: 'italic', lineHeight: '1.4' }}>
+              {feedback.ai_tip}
+            </p>
+          </div>
+        )}
+
         {/* Word Breakdown */}
         {feedback.word_breakdown?.length > 0 && (
           <div style={{ background: 'var(--bg-elevated)', borderRadius: '12px', padding: '14px 16px' }}>

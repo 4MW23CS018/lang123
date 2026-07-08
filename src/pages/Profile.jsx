@@ -36,8 +36,8 @@ function heatColor(v) {
 
 function StatCard({ icon, label, value, sub, color, delay }) {
   return (
-    <div style={{
-      background: color + '10', border: `1px solid ${color}20`,
+    <div className="glass-card" style={{
+      border: `1px solid ${color}40`,
       borderRadius: 14, padding: '16px 14px',
       opacity: 0, animation: `fadeUp 0.4s var(--ease-out) ${delay} forwards`,
       transition: 'transform 0.2s', cursor: 'default',
@@ -86,19 +86,18 @@ export default function Profile() {
       </div>
 
       {/* Main card */}
-      <div style={{
-        background: 'var(--bg-card)', border: '1px solid var(--border-subtle)',
-        borderRadius: 20, padding: '26px 22px',
-        boxShadow: 'var(--card-shadow)',
+      <div className="glass-panel" style={{
+        padding: '26px 22px',
         opacity: 0, animation: 'fadeUp 0.5s var(--ease-out) 120ms forwards',
       }}>
         {/* Avatar + Name */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20, paddingBottom: 20, borderBottom: '1px solid var(--border-subtle)' }}>
-          <div style={{
+          <div className={user.equippedBorder ? user.equippedBorder.replace(/_/g, '-') : ''} style={{
             width: 56, height: 56, borderRadius: '50%',
-            background: 'var(--accent-bg)', border: '2px solid var(--accent-border)',
+            background: 'var(--accent-bg)', border: user.equippedBorder ? 'none' : '2px solid var(--accent-border)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 22, fontWeight: 800, color: 'var(--accent)', flexShrink: 0,
+            position: 'relative', zIndex: 1, // for pseudo-elements like gold-shimmer
           }}>{user.name?.[0]?.toUpperCase()}</div>
           <div>
             <p style={{ color: 'var(--text-primary)', fontWeight: 800, fontSize: 17, margin: '0 0 2px', letterSpacing: '-0.3px' }}>{user.name}</p>
