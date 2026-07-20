@@ -5,6 +5,7 @@ import { api } from "../../../convex/_generated/api";
 import PronunciationFeedback from "./PronunciationFeedback";
 import WaveformVisualizer from "./WaveformVisualizer";
 import ListenButton from "./ListenButton";
+import Confetti from "react-confetti";
 
 export default function SpeechRecorder({ phrase, displayPhrase, language, userId, lessonId, phonetics, onComplete }) {
   const [recording, setRecording] = useState(false);
@@ -89,14 +90,42 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
   if (feedback) {
     const isSuccess = feedback.accuracy >= 80;
 
+    const BreakdownView = () => (
+      <div style={{ width: '100%', maxWidth: 400, margin: '0 auto' }}>
+        {feedback.word_breakdown && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center', marginBottom: 24 }}>
+            {feedback.word_breakdown.map((w, i) => (
+              <span key={i} style={{ 
+                padding: '6px 12px', borderRadius: 8, fontWeight: 600, fontSize: 16,
+                background: w.status === 'correct' ? 'rgba(34,197,94,0.15)' : w.status === 'mispronounced' ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.15)',
+                color: w.status === 'correct' ? '#22c55e' : w.status === 'mispronounced' ? '#f59e0b' : '#ef4444',
+                border: `1px solid ${w.status === 'correct' ? 'rgba(34,197,94,0.3)' : w.status === 'mispronounced' ? 'rgba(245,158,11,0.3)' : 'rgba(239,68,68,0.3)'}`
+              }}>
+                {w.word}
+              </span>
+            ))}
+          </div>
+        )}
+        
+        {feedback.ai_tip && (
+            <div style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-default)', padding: 16, borderRadius: 12, marginBottom: 24, textAlign: 'left' }}>
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>💡 AI Tip</p>
+              <p style={{ margin: 0, fontSize: 15, color: 'var(--text-primary)', lineHeight: 1.5 }}>{feedback.ai_tip}</p>
+            </div>
+        )}
+      </div>
+    );
+
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 24, animation: 'fadeUp 0.4s var(--ease-out) forwards' }}>
-
+        {isSuccess && <Confetti width={window.innerWidth} height={window.innerHeight} recycle={false} numberOfPieces={400} />}
         {isSuccess ? (
-          <div style={{ textAlign: 'center' }}>
+          <div style={{ textAlign: 'center', zIndex: 10 }}>
             <div style={{ fontSize: 80, animation: 'bouncePulse 2s infinite ease-in-out' }}>🎉</div>
             <h2 style={{ color: '#22c55e', fontSize: 32, fontWeight: 800, margin: '16px 0 8px' }}>Awesome Job!</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: 18, margin: '0 0 24px' }}>Accuracy: {Math.round(feedback.accuracy)}%</p>
+
+            <BreakdownView />
 
             <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginBottom: 32 }}>
               <div style={{ background: 'var(--bg-elevated)', padding: '12px 24px', borderRadius: 16, border: '2px solid #eab308' }}>
@@ -127,10 +156,12 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
             </button>
           </div>
         ) : (
-          <div style={{ textAlign: 'center' }}>
+          <div style={{ textAlign: 'center', zIndex: 10 }}>
             <div style={{ fontSize: 80 }}>😅</div>
             <h2 style={{ color: '#ef4444', fontSize: 32, fontWeight: 800, margin: '16px 0 8px' }}>Keep Trying!</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: 18, margin: '0 0 24px' }}>Accuracy: {Math.round(feedback.accuracy)}% (Need &gt;= 80%)</p>
+
+            <BreakdownView />
 
             <button
               onClick={() => {

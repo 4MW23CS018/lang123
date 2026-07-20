@@ -58,6 +58,9 @@ function PathNode({ lesson, status, color, index }) {
             : `0 6px 0 ${isPassed ? '#ca8a04' : (color + 'aa')}`,
           transform: hov && !isLocked ? 'translateY(-2px)' : (isCurrent ? 'translateY(-4px)' : 'none'),
           transition: 'transform 0.1s, box-shadow 0.1s',
+          '--node-color-aa': color + 'aa',
+          '--node-color-40': color + '40',
+          '--node-color-00': color + '00',
           animation: isCurrent ? 'bouncePulse 2s infinite ease-in-out' : 'none',
           marginBottom: 12
         }}
@@ -84,19 +87,7 @@ function PathNode({ lesson, status, color, index }) {
         )}
       </div>
 
-      <style>{`
-        @keyframes bouncePulse {
-          0%, 100% { transform: translateY(0); box-shadow: 0 6px 0 ${color}aa, 0 0 0 0 ${color}40; }
-          50% { transform: translateY(-6px); box-shadow: 0 12px 0 ${color}aa, 0 0 0 10px ${color}00; }
-        }
-        @keyframes shake-anim {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-5px) rotate(-5deg); }
-          50% { transform: translateX(5px) rotate(5deg); }
-          75% { transform: translateX(-5px) rotate(-5deg); }
-        }
-        .shake-anim { animation: shake-anim 0.4s ease-in-out; }
-      `}</style>
+
     </div>
   );
 }

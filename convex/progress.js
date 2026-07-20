@@ -9,8 +9,7 @@ export const getUserProgress = query({
 
     const assessments = await ctx.db
       .query("assessments")
-      .withIndex("by_creation_time")
-      .filter((q) => q.eq(q.field("userId"), args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
       .collect();
 
     return {

@@ -10,8 +10,11 @@
 
 import type * as ai from "../ai.js";
 import type * as auth from "../auth.js";
+import type * as chatMessages from "../chatMessages.js";
+import type * as chatbot from "../chatbot.js";
 import type * as gamification from "../gamification.js";
 import type * as http from "../http.js";
+import type * as knowledgeBase from "../knowledgeBase.js";
 import type * as lessons from "../lessons.js";
 import type * as listUsers from "../listUsers.js";
 import type * as preferences from "../preferences.js";
@@ -33,8 +36,11 @@ import type {
 declare const fullApi: ApiFromModules<{
   ai: typeof ai;
   auth: typeof auth;
+  chatMessages: typeof chatMessages;
+  chatbot: typeof chatbot;
   gamification: typeof gamification;
   http: typeof http;
+  knowledgeBase: typeof knowledgeBase;
   lessons: typeof lessons;
   listUsers: typeof listUsers;
   preferences: typeof preferences;

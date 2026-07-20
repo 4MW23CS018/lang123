@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
+import { useTheme } from '../components/hooks/useTheme';
 
 const WORDS = ['Kannada', 'Tamil', 'Telugu', 'Malayalam', 'Tulu', 'Kodava'];
 
@@ -65,6 +66,7 @@ function FeatureCard({ emoji, title, desc, delay }) {
 }
 
 export default function Landing() {
+  const { isDark, toggle } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
@@ -83,6 +85,19 @@ export default function Landing() {
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.5px' }}>Lang<span style={{ color: 'var(--accent)' }}>Bridge</span></span>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button onClick={toggle} title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: 'var(--bg-elevated)', border: '1px solid var(--border-default)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 16, cursor: 'pointer',
+                transition: 'all 0.2s', marginRight: 4,
+                color: 'var(--text-primary)'
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-subtle)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-elevated)'}>
+              {isDark ? '☀️' : '🌙'}
+            </button>
             <Link to="/login" style={{ padding: '8px 20px', fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', borderRadius: 10, transition: 'color 0.2s' }}
               onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
               onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}>Log In</Link>

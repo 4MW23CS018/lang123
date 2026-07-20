@@ -179,7 +179,9 @@ function DailyGoalSetter({ currentGoal, userId }) {
 export default function Dashboard() {
   const userId = localStorage.getItem('userId');
   const user = useQuery(api.users.get, userId ? { userId } : 'skip');
-  const lessons = useQuery(api.lessons.list);
+  const selectedLang = localStorage.getItem('selectedLanguage') || 'Kannada';
+  const lessons = useQuery(api.lessons.listByLanguage, { language: selectedLang });
+  const dueReviews = useQuery(api.srs.getDueReviews, userId ? { userId, language: selectedLang } : 'skip');
   const [xpVis, setXpVis] = useState(false);
   const [goalVis, setGoalVis] = useState(false);
 
@@ -213,12 +215,7 @@ export default function Dashboard() {
 
   return (
     <div style={{ padding: '32px 24px', maxWidth: 800, margin: '0 auto' }}>
-      <style>{`
-        @keyframes pulse-glow {
-          0% { opacity: 0.5; transform: scale(0.98); }
-          100% { opacity: 1; transform: scale(1.02); }
-        }
-      `}</style>
+
 
       {/* Welcome */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28, opacity: 0, animation: 'fadeDown 0.4s var(--ease-out) 60ms forwards' }}>
@@ -302,6 +299,42 @@ export default function Dashboard() {
           <DailyQuests userId={userId} />
         </div>
       </div>
+
+      {/* Due Reviews */}
+      {dueReviews && dueReviews.length > 0 && (
+        <div style={{ opacity: 0, animation: 'fadeUp 0.4s var(--ease-out) 480ms forwards', marginBottom: 24 }}>
+          <span style={{ color: 'var(--text-muted)', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: 12 }}>
+            Reviews Due Today
+          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {dueReviews.map(lesson => (
+              <div key={lesson._id} className="glass-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(239, 68, 68, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>
+                    🧠
+                  </div>
+                  <div>
+                    <p style={{ color: 'var(--text-primary)', fontSize: 15, fontWeight: 700, margin: '0 0 2px' }}>{lesson.title}</p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: 12, margin: 0 }}>Spaced Repetition Review</p>
+                  </div>
+                </div>
+                <Link to={`/practice/${lesson._id}`} style={{ textDecoration: 'none' }}>
+                  <button style={{ 
+                    background: '#ef4444', color: '#fff', border: 'none', borderRadius: 8, 
+                    padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', 
+                    boxShadow: '0 3px 0 #dc2626', transition: 'transform 0.1s' 
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                  onMouseLeave={e => e.currentTarget.style.transform = 'none'}
+                  onMouseDown={e => { e.currentTarget.style.transform = 'translateY(3px)'; e.currentTarget.style.boxShadow = 'none'; }}>
+                    Review Now
+                  </button>
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Quick actions */}
       <div style={{ opacity: 0, animation: 'fadeUp 0.4s var(--ease-out) 500ms forwards' }}>

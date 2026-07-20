@@ -10,7 +10,7 @@ export const listByLanguage = query({
   handler: async (ctx, args) => {
     const lessons = await ctx.db
       .query("lessons")
-      .filter((q) => q.eq(q.field("language"), args.language))
+      .withIndex("by_language", (q) => q.eq("language", args.language))
       .collect();
     
     // Sort by order (official path lessons first), then by creation/id

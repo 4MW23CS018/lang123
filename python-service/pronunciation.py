@@ -100,6 +100,8 @@ def assess(transcription, expected_native, expected_phonetics="", language="Lang
         
     # Return the one with the higher accuracy
     if acc_phonetics > acc_native:
-        return acc_phonetics, breakdown_phonetics, None
+        ai_tip = get_ai_tip(expected_phonetics, transcription, breakdown_phonetics, language)
+        return acc_phonetics, breakdown_phonetics, ai_tip
     else:
-        return acc_native, breakdown_native, None
+        ai_tip = get_ai_tip(expected_native, transcription, breakdown_native, language)
+        return acc_native, breakdown_native, ai_tip
