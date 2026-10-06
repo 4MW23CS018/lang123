@@ -69,4 +69,12 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_user", ["userId"])
     .index("by_user_language", ["userId", "language"]),
+
+  roleplayMessages: defineTable({
+    userId: v.string(),
+    scenarioId: v.string(),
+    userMessage: v.string(),
+    assistantMessage: v.string(),
+    timestamp: v.number(),
+  }).index("by_user_scenario", ["userId", "scenarioId"]),
 }); 

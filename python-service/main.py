@@ -80,6 +80,43 @@ def assess_audio():
             os.remove(preprocessed_path)
 
 
+@app.route('/transcribe', methods=['POST'])
+def transcribe_audio():
+    data = request.json
+    language = data.get('language', '').lower()
+
+    if 'audio_base64' in data:
+        audio_bytes = base64.b64decode(data['audio_base64'])
+    else:
+        return jsonify({'error': 'No audio provided'}), 400
+
+    tmp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.webm') as tmp:
+            tmp.write(audio_bytes)
+            tmp_path = tmp.name
+
+        # Whisper handles raw webm files natively perfectly.
+        # Skip heavy noise reduction preprocessing for chat to make it lightning fast.
+        preprocessed_path = tmp_path
+
+        # 2. Local Whisper transcription (Use selected language)
+        transcribed_text = transcribe(preprocessed_path, language, phrase="", phonetics="")
+
+        return jsonify({
+            'text': transcribed_text
+        })
+    except Exception as e:
+        safe_error = str(e).encode('ascii', 'backslashreplace').decode('ascii')
+        print(f"[ERROR] {safe_error}")
+        return jsonify({'error': safe_error}), 500
+    finally:
+        if tmp_path and os.path.exists(tmp_path):
+            os.remove(tmp_path)
+        if 'preprocessed_path' in locals() and preprocessed_path and preprocessed_path != tmp_path and os.path.exists(preprocessed_path):
+            os.remove(preprocessed_path)
+
+
 @app.route('/tts', methods=['POST'])
 def text_to_speech():
     """Generate audio pronunciation for a phrase in the given language."""

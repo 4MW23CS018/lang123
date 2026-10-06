@@ -3,7 +3,7 @@ import LanguageSwitcher from './layout/LanguageSwitcher';
 import { useTheme } from './hooks/useTheme';
 import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { LayoutDashboard, Type, BookOpen, Gem, Trophy, User, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, Type, BookOpen, Gem, Trophy, User, Sun, Moon, Mic } from 'lucide-react';
 
 const NAV = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -11,6 +11,7 @@ const NAV = [
   { to: '/lessons', label: 'Lessons', icon: BookOpen },
   { to: '/shop', label: 'Shop', icon: Gem },
   { to: '/leaderboard', label: 'Leaderboard', icon: Trophy },
+  { to: '/roleplay', label: 'Roleplay', icon: Mic },
   { to: '/profile', label: 'Profile', icon: User },
 ];
 

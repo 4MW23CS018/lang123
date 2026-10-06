@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAction, useQuery, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
+import { Mic, Square, Loader2 } from 'lucide-react';
 import ChatBubble from './ChatBubble';
 
 const SUGGESTED_PROMPTS = [
@@ -21,6 +22,64 @@ export default function ChatPanel({ compact = false }) {
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const chunksRef = useRef([]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      mediaRecorderRef.current = mr;
+      chunksRef.current = [];
+      
+      mr.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+      
+      mr.onstop = async () => {
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = async () => {
+          const b64 = reader.result.split(',')[1];
+          setIsTranscribing(true);
+          try {
+            const res = await fetch("http://localhost:5000/transcribe", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ audio_base64: b64, language })
+            });
+            const data = await res.json();
+            if (data.text && data.text.trim()) {
+              handleSend(data.text);
+            }
+          } catch (err) {
+            console.error(err);
+            setError("Transcription failed.");
+          } finally {
+            setIsTranscribing(false);
+          }
+        };
+      };
+      
+      mr.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error(err);
+      setError("Microphone access denied.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach(t => t.stop());
+      setIsRecording(false);
+    }
+  };
 
   const chatAction = useAction(api.chatbot.chat);
   const history = useQuery(
@@ -284,6 +343,21 @@ export default function ChatPanel({ compact = false }) {
               e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
             }}
           />
+          <button
+            onClick={isRecording ? stopRecording : startRecording}
+            disabled={isLoading || isTranscribing}
+            style={{
+              width: 40, height: 40, borderRadius: 12,
+              background: isRecording ? 'var(--coral)' : 'var(--bg-subtle)',
+              border: '1px solid var(--border-subtle)',
+              cursor: (isLoading || isTranscribing) ? 'default' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: isRecording ? '#fff' : 'var(--text-primary)',
+              transition: 'all 0.2s', flexShrink: 0,
+            }}
+          >
+            {isTranscribing ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : (isRecording ? <Square size={16} fill="currentColor" /> : <Mic size={18} />)}
+          </button>
           <button
             onClick={() => handleSend()}
             disabled={!input.trim() || isLoading}

@@ -12,6 +12,7 @@ except Exception as e:
     model = WhisperModel("tiny", device="cpu", compute_type="int8", cpu_threads=cpu_threads)
 
 LANG_MAP = {
+    "english": "en",
     "kannada": "kn",
     "tamil": "ta",
     "telugu": "te",
@@ -20,31 +21,37 @@ LANG_MAP = {
     "kodava": "kn",
 }
 
-def transcribe(audio_path, language_name, phrase="", phonetics=""):
+def transcribe(audio_path, language_name=None, phrase="", phonetics=""):
     """
     Transcribes audio locally using faster-whisper.
     Fast (< 1s), zero API cost, high accuracy.
     """
-    lang_code = LANG_MAP.get(language_name.lower(), "kn")
+    lang_code = LANG_MAP.get(language_name.lower(), None) if language_name else None
     
     # Construct initial prompt to ground Whisper in expected script/sounds
-    prompt_parts = [f"{language_name} speech practice"]
+    prompt_parts = []
+    if language_name:
+        prompt_parts.append(f"{language_name} speech practice")
     if phrase:
         prompt_parts.append(phrase)
     if phonetics:
         prompt_parts.append(phonetics)
-    initial_prompt = ", ".join(prompt_parts)
+    initial_prompt = ", ".join(prompt_parts) if prompt_parts else None
 
-    print(f"[WHISPER] Transcribing audio for language '{language_name}' (code: {lang_code})...")
-    segments, info = model.transcribe(
-        audio_path,
-        language=lang_code,
-        beam_size=1,
-        vad_filter=False,                         # Disable VAD filter so short single words/vowels are never trimmed
-        initial_prompt=initial_prompt,             # Guide model to correct Indic vocabulary
-        condition_on_previous_text=False,          # Prevent hallucination loops
-        temperature=0.0,                           # Deterministic greedy decoding
-    )
+    print(f"[WHISPER] Transcribing audio (lang filter: {lang_code if lang_code else 'auto'})...")
+    
+    kwargs = {
+        "beam_size": 1,
+        "vad_filter": False,
+        "condition_on_previous_text": False,
+        "temperature": 0.0,
+    }
+    if lang_code:
+        kwargs["language"] = lang_code
+    if initial_prompt:
+        kwargs["initial_prompt"] = initial_prompt
+
+    segments, info = model.transcribe(audio_path, **kwargs)
     
     text = " ".join([s.text.strip() for s in segments]).strip()
     safe_text = text.encode('ascii', 'backslashreplace').decode('ascii')

@@ -5,7 +5,6 @@ import { BASICS_DATA } from '../data/basics';
 import ListenButton from '../components/speech/ListenButton';
 import { Type } from 'lucide-react';
 import HandwritingTracer from '../components/HandwritingTracer';
-import { CHARACTER_STROKES } from '../data/CharacterData';
 
 const TABS = ['Vowels', 'Consonants', 'Numbers'];
 
@@ -64,11 +63,7 @@ export default function Basics() {
   const items = data ? data[activeTab.toLowerCase()] || [] : [];
 
   const handleCardClick = (char) => {
-    if (CHARACTER_STROKES[char]) {
-      setPracticeChar(char);
-    } else {
-      alert(`Tracing not yet available for "${char}". Please add stroke data.`);
-    }
+    setPracticeChar(char);
   };
 
   const getCurrentItems = () => data[activeTab.toLowerCase()] || [];
@@ -159,14 +154,12 @@ export default function Basics() {
         <HandwritingTracer
           key={practiceChar}
           char={practiceChar}
-          strokePaths={CHARACTER_STROKES[practiceChar] || []}
           onClose={() => setPracticeChar(null)}
           onNext={() => {
             const next = findNextChar(practiceChar, 1);
             if (next) setPracticeChar(next);
             else setPracticeChar(null);
           }}
-          
         />
       )}
     </div>

@@ -34,6 +34,7 @@ export const create = mutation({
     description: v.optional(v.string()),
     displayPhrase: v.optional(v.string()),
     isCustom: v.optional(v.boolean()),
+    order: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     return await ctx.db.insert("lessons", args);

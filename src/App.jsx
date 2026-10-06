@@ -13,6 +13,7 @@ const Leaderboard = lazy(() => import('./pages/Leaderboard'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Basics = lazy(() => import('./pages/Basics'));
 const Shop = lazy(() => import('./pages/Shop'));
+const Roleplay = lazy(() => import('./pages/Roleplay'));
 
 import ProtectedRoute from './components/ProtectedRoute';
 import ChatWidget from './components/chat/ChatWidget';
@@ -62,6 +63,7 @@ export default function App() {
           <Route path="/practice/:id" element={<ProtectedRoute><Layout><Practice /></Layout></ProtectedRoute>} />
           <Route path="/leaderboard" element={<ProtectedRoute><Layout><Leaderboard /></Layout></ProtectedRoute>} />
           <Route path="/shop" element={<ProtectedRoute><Layout><Shop /></Layout></ProtectedRoute>} />
+          <Route path="/roleplay" element={<ProtectedRoute><Layout><Roleplay /></Layout></ProtectedRoute>} />
 
           <Route path="/profile" element={<ProtectedRoute><Layout><Profile /></Layout></ProtectedRoute>} />
 

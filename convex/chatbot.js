@@ -121,19 +121,18 @@ Rules: Always give native script + phonetics (hyphenated syllables) + English. U
     };
 
     try {
-      // Primary: gemini-3.5-flash per user request
-      console.log("[EnZo] Calling gemini-3.5-flash for", args.language);
-      assistantReply = await callGemini("gemini-3.5-flash");
+      console.log("[EnZo] Calling gemini-3.8-flash for", args.language);
+      assistantReply = await callGemini("gemini-3.8-flash");
     } catch (err) {
       const status = err?.status || err?.code || "unknown";
-      console.error(`[EnZo] gemini-2.5-flash failed (${status}):`, err?.message || String(err));
+      console.error(`[EnZo] gemini-3.8-flash failed (${status}):`, err?.message || String(err));
 
-      // Fallback: gemini-2.5-pro (yet another quota bucket)
+      // Fallback: gemini-3.5-pro
       try {
-        console.log("[EnZo] Falling back to gemini-2.5-pro...");
-        await new Promise((r) => setTimeout(r, 3000));
-        assistantReply = await callGemini("gemini-2.5-pro");
-        console.log("[EnZo] Fallback to gemini-2.5-pro succeeded for", args.language);
+        console.log("[EnZo] Falling back to gemini-3.5-pro...");
+        await new Promise((r) => setTimeout(r, 1000));
+        assistantReply = await callGemini("gemini-3.5-pro");
+        console.log("[EnZo] Fallback to gemini-3.5-pro succeeded for", args.language);
       } catch (retryErr) {
         const retryStatus = retryErr?.status || retryErr?.code || "unknown";
         console.error(`[EnZo] Fallback also failed (${retryStatus}):`, retryErr?.message || String(retryErr));

@@ -20,6 +20,7 @@ import type * as listUsers from "../listUsers.js";
 import type * as preferences from "../preferences.js";
 import type * as progress from "../progress.js";
 import type * as quests from "../quests.js";
+import type * as roleplay from "../roleplay.js";
 import type * as seedLessons from "../seedLessons.js";
 import type * as seedPath from "../seedPath.js";
 import type * as shop from "../shop.js";
@@ -46,6 +47,7 @@ declare const fullApi: ApiFromModules<{
   preferences: typeof preferences;
   progress: typeof progress;
   quests: typeof quests;
+  roleplay: typeof roleplay;
   seedLessons: typeof seedLessons;
   seedPath: typeof seedPath;
   shop: typeof shop;
