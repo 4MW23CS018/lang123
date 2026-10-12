@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import React, { Suspense, lazy } from 'react';
 
+const VisualNovel = lazy(() => import('./game/VisualNovel'));
 const Landing = lazy(() => import('./pages/Landing'));
 const Login = lazy(() => import('./pages/Login'));
 const Signup = lazy(() => import('./pages/Signup'));
@@ -51,28 +52,28 @@ export default function App() {
           </div>
         }>
           <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-          
-          <Route path="/dashboard" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
-          <Route path="/basics" element={<ProtectedRoute><Layout><Basics /></Layout></ProtectedRoute>} />
-          <Route path="/lessons" element={<ProtectedRoute><Layout><Lessons /></Layout></ProtectedRoute>} />
-          <Route path="/lesson/:id" element={<ProtectedRoute><Layout><LessonDetail /></Layout></ProtectedRoute>} />
-          <Route path="/practice/:id" element={<ProtectedRoute><Layout><Practice /></Layout></ProtectedRoute>} />
-          <Route path="/leaderboard" element={<ProtectedRoute><Layout><Leaderboard /></Layout></ProtectedRoute>} />
-          <Route path="/shop" element={<ProtectedRoute><Layout><Shop /></Layout></ProtectedRoute>} />
-          <Route path="/roleplay" element={<ProtectedRoute><Layout><Roleplay /></Layout></ProtectedRoute>} />
+            <Route path="/" element={<Landing />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
 
-          <Route path="/profile" element={<ProtectedRoute><Layout><Profile /></Layout></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
+            <Route path="/basics" element={<ProtectedRoute><Layout><Basics /></Layout></ProtectedRoute>} />
+            <Route path="/lessons" element={<ProtectedRoute><Layout><Lessons /></Layout></ProtectedRoute>} />
+            <Route path="/lesson/:id" element={<ProtectedRoute><Layout><LessonDetail /></Layout></ProtectedRoute>} />
+            <Route path="/practice/:id" element={<ProtectedRoute><Layout><Practice /></Layout></ProtectedRoute>} />
+            <Route path="/leaderboard" element={<ProtectedRoute><Layout><Leaderboard /></Layout></ProtectedRoute>} />
+            <Route path="/shop" element={<ProtectedRoute><Layout><Shop /></Layout></ProtectedRoute>} />
+            <Route path="/roleplay" element={<ProtectedRoute><Layout><Roleplay /></Layout></ProtectedRoute>} />
+            <Route path="/roleplay/game" element={<ProtectedRoute><VisualNovel /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Layout><Profile /></Layout></ProtectedRoute>} />
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
-      {/* Floating chat widget on all pages */}
-      {localStorage.getItem('userId') && <ChatWidget />}
+        {/* Floating chat widget on all pages */}
+        {localStorage.getItem('userId') && <ChatWidget />}
       </BrowserRouter>
     </>
   );
