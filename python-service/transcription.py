@@ -2,7 +2,7 @@ from faster_whisper import WhisperModel
 import os
 
 # Load Whisper 'base' model locally (configured with multi-threading for speed)
-cpu_threads = max(1, (os.cpu_count() or 4) // 2)
+cpu_threads = 2 # max(1, (os.cpu_count() or 4) // 2)
 print(f"[WHISPER] Loading local Whisper model 'base' with {cpu_threads} CPU threads...")
 try:
     model = WhisperModel("base", device="cpu", compute_type="int8", cpu_threads=cpu_threads)

@@ -674,3 +674,11 @@ select {
     scroll-behavior: auto;
   }
 }
+/* Basics page keyboard focus and writing surface controls */
+.basics-page button:focus-visible,
+.basics-page input:focus-visible,
+[role="dialog"] button:focus-visible,
+[role="dialog"] input:focus-visible {
+  outline: 3px solid var(--sky, #0ea5e9);
+  outline-offset: 3px;
+}
