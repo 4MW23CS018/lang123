@@ -1,11 +1,15 @@
 // Basics.jsx — Foundations page: browse vowels/consonants/numbers and
 // practise writing each character with the guided handwriting tracer.
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BookOpen, PenLine, ArrowRight, Type } from "lucide-react";
 import { useLanguage } from "../components/hooks/useLanguage";
 import { BASICS_DATA } from "../data/basics";
 import ListenButton from "../components/speech/ListenButton";
 import HandwritingTracer from "../components/HandwritingTracer";
+import {
+  getBasicsGlyphFont,
+  getBasicsGlyphText,
+} from "../utils/basicsGlyphFonts";
 
 const TABS = [
   {
@@ -18,10 +22,113 @@ const TABS = [
     label: "Consonants",
     hint: "Build the core letter shapes",
   },
-  { key: "numbers", label: "Numbers", hint: "Learn native script numerals" },
+  {
+    key: "specialCharacters",
+    label: "Special Characters",
+    hint: "Learn signs and script limitations separately from letters",
+  },
+  {
+    key: "numbers",
+    label: "Numbers",
+    hint: "Learn number names and the script forms available in this dataset",
+  },
 ];
-const glyphFor = (item) =>
-  item.val !== undefined ? item.char.split(" ")[0] : item.char;
+const glyphFor = getBasicsGlyphText;
+const itemKey = (item) => item.id ?? item.char ?? `number-${item.val}`;
+const canTraceItem = (_language, item) =>
+  !item.nativeGlyphUnavailable && Boolean(item.displayChar || item.char);
+
+function CharacterGlyph({ item, language, style }) {
+  const glyph = glyphFor(item);
+  const glyphFont = getBasicsGlyphFont(language, item);
+  const { fontFamily, fontWeight, requiresFontFaceLoad = false } = glyphFont;
+  const fontKey = `${fontFamily}:${fontWeight}:${glyph}`;
+  const hasFontLoadingApi =
+    typeof document !== "undefined" && Boolean(document.fonts?.load);
+  const [fontStatus, setFontStatus] = useState({ key: "", loaded: false });
+
+  useEffect(() => {
+    if (!requiresFontFaceLoad || !fontFamily || !fontKey) return undefined;
+    let active = true;
+    if (!document.fonts?.load) return undefined;
+    document.fonts
+      .load(`${fontWeight} 48px ${fontFamily}`, glyph)
+      .then((faces) => {
+        if (active) {
+          setFontStatus({
+            key: fontKey,
+            loaded: faces.some((face) => face.status === "loaded"),
+          });
+        }
+      })
+      .catch(() => {
+        if (active) setFontStatus({ key: fontKey, loaded: false });
+      });
+    return () => {
+      active = false;
+    };
+  }, [fontFamily, fontKey, fontWeight, glyph, requiresFontFaceLoad]);
+  const glyphFontReady =
+    !requiresFontFaceLoad ||
+    !hasFontLoadingApi ||
+    (fontStatus.key === fontKey && fontStatus.loaded);
+
+  if (item.displayChar) {
+    if (!glyphFontReady) {
+      return (
+        <span className="basics-glyph-fallback" style={style}>
+          <span>{item.ph}</span>
+          <small>
+            {fontStatus.key === fontKey
+              ? "Script font unavailable"
+              : "Loading script glyph…"}
+          </small>
+        </span>
+      );
+    }
+    const fontClass = language === "Tulu"
+      ? "basics-custom-script-glyph basics-custom-script-glyph--tulu"
+      : "basics-custom-script-glyph basics-custom-script-glyph--kodava";
+    return (
+      <span
+        className={fontClass}
+        aria-label={`${language} glyph for ${item.ph}`}
+        style={{ ...style, fontFamily, fontWeight }}
+      >
+        {item.displayChar}
+      </span>
+    );
+  }
+
+  if (item.nativeGlyphUnavailable) {
+    return (
+      <span className="basics-glyph-fallback" style={style}>
+        <span>{item.ph}</span>
+          <small>No script glyph in this inventory</small>
+      </span>
+    );
+  }
+  if (!glyphFontReady) {
+    return (
+      <span className="basics-glyph-fallback" style={style}>
+        <span>{item.ph}</span>
+        <small>
+          {fontStatus.key === fontKey
+            ? "Script font unavailable"
+            : "Loading script glyph…"}
+        </small>
+      </span>
+    );
+  }
+  return (
+    <span
+      className={language === "Tulu" ? "tulu-tigalari" : undefined}
+      style={{ ...style, fontFamily, fontWeight }}
+    >
+      {glyph}
+    </span>
+  );
+}
 
 /** Shared style for all pill-shaped buttons on this page. */
 const buttonStyle = {
@@ -43,6 +150,7 @@ const buttonStyle = {
 
 function BasicCard({ item, language, onTrace }) {
   const glyph = glyphFor(item);
+  const canTrace = canTraceItem(language, item);
   return (
     <article
       className="glass-card"
@@ -63,7 +171,11 @@ function BasicCard({ item, language, onTrace }) {
           lineHeight: 1,
         }}
       >
-        {glyph}
+        <CharacterGlyph
+          item={item}
+          language={language}
+          style={item.val !== undefined ? { width: 92, height: 72 } : undefined}
+        />
       </div>
       {item.val !== undefined && (
         <span style={{ color: "var(--text-muted)", fontSize: 12 }}>
@@ -79,6 +191,14 @@ function BasicCard({ item, language, onTrace }) {
       >
         {item.ph}
       </div>
+      {item.note && ((language === "Tulu" || language === "Kodava") ? (
+        <details className="basics-card-note">
+          <summary>About this form</summary>
+          <p>{item.note}</p>
+        </details>
+      ) : (
+        <p className="basics-card-note-text">{item.note}</p>
+      ))}
       {item.ex && (
         <div
           style={{
@@ -118,7 +238,7 @@ function BasicCard({ item, language, onTrace }) {
       >
         <ListenButton
           phrase={item.tts || glyph}
-          displayPhrase={glyph}
+          displayPhrase={item.displayChar || item.nativeGlyphUnavailable ? item.ph : glyph}
           language={language}
           ariaLabel={`${item.ph} pronunciation`}
           size={44}
@@ -126,8 +246,14 @@ function BasicCard({ item, language, onTrace }) {
         <button
           type="button"
           onClick={() => onTrace(item)}
-          aria-label={`Trace character ${glyph}`}
-          style={buttonStyle}
+          aria-label={`Trace ${item.ph}`}
+          disabled={!canTrace}
+          title={canTrace ? undefined : `No script glyph is available in this inventory to trace for ${item.ph}.`}
+          style={{
+            ...buttonStyle,
+            opacity: canTrace ? 1 : 0.5,
+            cursor: canTrace ? "pointer" : "not-allowed",
+          }}
         >
           <PenLine size={16} aria-hidden="true" /> Trace
         </button>
@@ -140,6 +266,10 @@ function BasicCard({ item, language, onTrace }) {
 
 export default function Basics() {
   const { language } = useLanguage();
+  return <BasicsContent key={language} language={language} />;
+}
+
+function BasicsContent({ language }) {
   const data = BASICS_DATA[language];
   const [activeTab, setActiveTab] = useState("vowels");
   const [practice, setPractice] = useState(null);
@@ -171,10 +301,16 @@ export default function Basics() {
   const navigateCharacter = (direction) => {
     if (!practice) return;
     const sequence = data?.[practice.sequence] || [];
-    const index = sequence.findIndex(
-      (item) => item.char === practice.item.char,
-    );
-    const nextItem = sequence[index + direction];
+    const index = sequence.findIndex((item) => itemKey(item) === itemKey(practice.item));
+    let nextIndex = index + direction;
+    while (
+      nextIndex >= 0 &&
+      nextIndex < sequence.length &&
+      !canTraceItem(language, sequence[nextIndex])
+    ) {
+      nextIndex += direction;
+    }
+    const nextItem = sequence[nextIndex];
     if (!nextItem) return;
     setPractice({
       ...practice,
@@ -182,6 +318,20 @@ export default function Basics() {
       stage: practice.guided ? "learn" : "trace",
     });
     setRecall("");
+  };
+  const traceNeighborGlyph = (direction) => {
+    if (!practice) return undefined;
+    const sequence = data?.[practice.sequence] || [];
+    const index = sequence.findIndex((item) => itemKey(item) === itemKey(practice.item));
+    let nextIndex = index + direction;
+    while (
+      nextIndex >= 0 &&
+      nextIndex < sequence.length &&
+      !canTraceItem(language, sequence[nextIndex])
+    ) {
+      nextIndex += direction;
+    }
+    return sequence[nextIndex] ? glyphFor(sequence[nextIndex]) : undefined;
   };
   const moveNext = () => {
     if (!practice) return;
@@ -191,13 +341,20 @@ export default function Basics() {
       return;
     }
     const sequence = data?.[practice.sequence] || [];
-    const index = sequence.findIndex(
-      (item) => item.char === practice.item.char,
-    );
-    if (index >= 0 && index + 1 < sequence.length)
+    const index = sequence.findIndex((item) => itemKey(item) === itemKey(practice.item));
+    let nextIndex = index + 1;
+    if (!practice.guided) {
+      while (
+        nextIndex < sequence.length &&
+        !canTraceItem(language, sequence[nextIndex])
+      ) {
+        nextIndex += 1;
+      }
+    }
+    if (index >= 0 && nextIndex < sequence.length)
       setPractice({
         ...practice,
-        item: sequence[index + 1],
+        item: sequence[nextIndex],
         stage: practice.guided ? "learn" : "trace",
       });
     else setPractice(null);
@@ -248,7 +405,11 @@ export default function Basics() {
             lineHeight: 1.6,
           }}
         >
-          Learn each sound, see it in a word, then practise writing it.
+          {language === "Tulu" || language === "Kodava"
+            ? language === "Tulu"
+              ? "Letter and sign forms use Tulu-Tigalari where supported; available numerals use a project-specific font. Pronunciation aids use Kannada orthography, and some sounds have no glyph here."
+              : "Letter and sign forms use chart-derived Kodava Lipi glyphs through a project-specific private-use mapping; those code points are not standardized Kodava Unicode characters. Numerals have no glyph in this inventory."
+            : "Learn each sound, see it in a word, then practise writing it."}
         </p>
         {data && (
           <button
@@ -279,7 +440,7 @@ export default function Basics() {
         <section className="glass-panel" style={{ padding: 28 }}>
           <p style={{ color: "var(--text-primary)" }}>
             Basics are not currently available for {language}. This section is
-            available for Kannada, Tamil, Telugu, and Malayalam.
+            available for Kannada, Tamil, Telugu, Malayalam, Tulu, and Kodava.
           </p>
         </section>
       ) : (
@@ -327,7 +488,9 @@ export default function Basics() {
             }}
           >
             {TABS.find((tab) => tab.key === activeTab)?.hint}. Choose Listen to
-            hear it or Trace to practise writing.
+            hear a pronunciation. Trace uses a stored path when one exists, with
+            its verification status shown in the tracer; other supported glyphs
+            open freehand practice.
           </p>
           <div
             style={{
@@ -339,7 +502,7 @@ export default function Basics() {
           >
             {items.map((item) => (
               <BasicCard
-                key={item.char}
+              key={itemKey(item)}
                 item={item}
                 language={language}
                 onTrace={openPractice}
@@ -414,7 +577,11 @@ export default function Basics() {
                     margin: "16px 0",
                   }}
                 >
-                  {glyphFor(practice.item)}
+                  <CharacterGlyph
+                    item={practice.item}
+                    language={language}
+                    style={{ width: 120, height: 96, margin: "0 auto" }}
+                  />
                 </div>
                 <p
                   style={{
@@ -424,6 +591,11 @@ export default function Basics() {
                 >
                   Pronunciation: <strong>{practice.item.ph}</strong>
                 </p>
+                {practice.item.note && (
+                  <p style={{ color: "var(--text-muted)", textAlign: "center" }}>
+                    {practice.item.note}
+                  </p>
+                )}
                 {practice.item.ex && (
                   <p style={{ textAlign: "center" }}>
                     Example: {practice.item.ex} · {practice.item.exEn}
@@ -439,7 +611,7 @@ export default function Basics() {
                 >
                   <ListenButton
                     phrase={practice.item.tts || glyphFor(practice.item)}
-                    displayPhrase={glyphFor(practice.item)}
+                    displayPhrase={practice.item.displayChar || practice.item.nativeGlyphUnavailable ? practice.item.ph : glyphFor(practice.item)}
                     language={language}
                     ariaLabel={`${practice.item.ph} pronunciation`}
                     size={44}
@@ -448,16 +620,21 @@ export default function Basics() {
                     type="button"
                     autoFocus
                     style={buttonStyle}
-                    onClick={() => setPractice({ ...practice, stage: "trace" })}
+                    onClick={() =>
+                      setPractice({
+                        ...practice,
+                        stage: canTraceItem(language, practice.item) ? "trace" : "recall",
+                      })
+                    }
                   >
-                    <PenLine size={16} /> Trace this character
+                    {canTraceItem(language, practice.item) ? <><PenLine size={16} /> Trace this character</> : "Continue to recall"}
                   </button>
                 </div>
               </>
             ) : (
               <>
                 <p>
-                  Type the character for <strong>{practice.item.ph}</strong>.
+                  Type the {practice.item.displayChar || practice.item.nativeGlyphUnavailable ? "transliteration" : "character"} for <strong>{practice.item.ph}</strong>.
                 </p>
                 <label>
                   Your answer
@@ -475,17 +652,17 @@ export default function Basics() {
                     }}
                   />
                 </label>
-                {recall.trim() === glyphFor(practice.item) && (
+                {recall.trim() === (practice.item.displayChar || practice.item.nativeGlyphUnavailable ? practice.item.ph : glyphFor(practice.item)) && (
                   <p role="status">Correct. You recalled {practice.item.ph}.</p>
                 )}
                 <button
                   type="button"
-                  disabled={recall.trim() !== glyphFor(practice.item)}
+                  disabled={recall.trim() !== (practice.item.displayChar || practice.item.nativeGlyphUnavailable ? practice.item.ph : glyphFor(practice.item))}
                   style={{
                     ...buttonStyle,
                     marginTop: 14,
                     opacity:
-                      recall.trim() === glyphFor(practice.item) ? 1 : 0.5,
+                      recall.trim() === (practice.item.displayChar || practice.item.nativeGlyphUnavailable ? practice.item.ph : glyphFor(practice.item)) ? 1 : 0.5,
                   }}
                   onClick={moveNext}
                 >
@@ -496,26 +673,20 @@ export default function Basics() {
           </section>
         </div>
       )}
-      {practice && (!practice.guided || practice.stage === "trace") && (
+      {practice && canTraceItem(language, practice.item) && (!practice.guided || practice.stage === "trace") && (
         <HandwritingTracer
-          key={`${practice.sequence}-${practice.item.char}`}
+          key={`${language}-${practice.sequence}-${itemKey(practice.item)}-${glyphFor(practice.item)}`}
           char={glyphFor(practice.item)}
           label={practice.item.ph}
           example={practice.item.ex}
           script={language}
+          fontFamily={getBasicsGlyphFont(language, practice.item).fontFamily}
+          fontWeight={getBasicsGlyphFont(language, practice.item).fontWeight}
           previousChar={
-            data?.[practice.sequence]?.[
-              data[practice.sequence].findIndex(
-                (item) => item.char === practice.item.char,
-              ) - 1
-            ]?.char
+            traceNeighborGlyph(-1)
           }
           nextChar={
-            data?.[practice.sequence]?.[
-              data[practice.sequence].findIndex(
-                (item) => item.char === practice.item.char,
-              ) + 1
-            ]?.char
+            traceNeighborGlyph(1)
           }
           onClose={() => setPractice(null)}
           onNext={moveNext}

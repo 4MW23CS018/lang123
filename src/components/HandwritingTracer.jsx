@@ -1,9 +1,9 @@
 // HandwritingTracer.jsx — Font-rendered guide + freehand canvas tracing
 //  Guided handwriting practice dialog.
 //
-// Renders a font glyph as a faint background, overlays a dotted path the
-// user traces with finger/mouse/pen, and scores how closely they followed
-// it. Every character uses guided mode (no freehand toggle).
+// Renders the exact font glyph as a faint background. Reviewed centerline
+// paths are shown only when a character-specific path exists; otherwise the
+// same canvas supports freehand practice without a generated trajectory.
 import { useRef, useState, useEffect, useMemo } from "react";
 import {
   X,
@@ -14,11 +14,26 @@ import {
   Share2,
   Star,
 } from "lucide-react";
-import { VERIFIED_HANDWRITING_PATHS } from "../data/handwritingPaths";
+import { HANDWRITING_PATHS } from "../data/handwritingPaths";
+import {
+  CANVAS_SIZE,
+  GLYPH_FONT_SIZE,
+  GLYPH_INSET,
+  PEN_SIZE,
+  fitGlyph,
+  getPathMetrics,
+  isPathInsideGlyph,
+} from "../utils/handwritingTracerGeometry";
 
 
-const GLYPH_FONT_SIZE = 400 * 0.65;
-const GLYPH_INSET = 12;
+// The brush remains 32 logical canvas pixels wide. This larger font size makes
+// the painted glyph occupy most of the 400 × 400 practice board.
+const STROKE_TOLERANCE = 22;
+const START_TOLERANCE = 30;
+const MAX_POINTER_SAMPLE_GAP = 40;
+const MAX_TRACE_ADVANCE = 28;
+const TRACE_SAMPLE_SPACING = 5;
+const PATH_SAMPLE_TOLERANCE = STROKE_TOLERANCE;
 const buttonStyle = {
   display: "inline-flex",
   alignItems: "center",
@@ -39,13 +54,18 @@ const buttonStyle = {
 
 // ── Accuracy scoring ──
 // Compares user-drawn pixels against the character outline pixels
-/* ____ Dead at the moment (bcz we are only helping users learn not to compete imediatly )
 function computeAccuracy(canvas, charCanvas) {
-  const ctx = canvas.getContext('2d');
-  const charCtx = charCanvas.getContext('2d');
-  const w = canvas.width, h = canvas.height;
+  const comparisonCanvas = document.createElement("canvas");
+  comparisonCanvas.width = charCanvas.width;
+  comparisonCanvas.height = charCanvas.height;
+  comparisonCanvas
+    .getContext("2d")
+    .drawImage(canvas, 0, 0, comparisonCanvas.width, comparisonCanvas.height);
 
-  const userData = ctx.getImageData(0, 0, w, h).data;
+  const w = comparisonCanvas.width;
+  const h = comparisonCanvas.height;
+  const userData = comparisonCanvas.getContext("2d").getImageData(0, 0, w, h).data;
+  const charCtx = charCanvas.getContext("2d");
   const charData = charCtx.getImageData(0, 0, w, h).data;
 
   let charPixels = 0;
@@ -87,180 +107,6 @@ function computeAccuracy(canvas, charCanvas) {
   const finalScore = Math.min(100, Math.round(score * 100));
 
   return finalScore;
-} */
-
-function fitGlyph(ctx, char, canvasSize, fontSize, inset) {
-  const available = canvasSize - inset * 2;
-  const fontFamily =
-    "'Noto Sans Kannada', 'Noto Sans Tamil', 'Noto Sans Telugu', 'Noto Sans Malayalam', sans-serif";
-  const measure = (size) => {
-    ctx.font = `bold ${size}px ${fontFamily}`;
-    const metrics = ctx.measureText(char);
-    return {
-      metrics,
-      width: metrics.actualBoundingBoxLeft + metrics.actualBoundingBoxRight,
-      height:
-        metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent,
-    };
-  };
-
-  let fittedSize = fontSize;
-  let bounds = measure(fittedSize);
-  if (bounds.width > available || bounds.height > available) {
-    let low = 1;
-    let high = fontSize;
-    for (let i = 0; i < 12; i++) {
-      const candidate = (low + high) / 2;
-      const candidateBounds = measure(candidate);
-      if (
-        candidateBounds.width <= available &&
-        candidateBounds.height <= available
-      ) {
-        low = candidate;
-      } else {
-        high = candidate;
-      }
-    }
-    fittedSize = low;
-    bounds = measure(fittedSize);
-  }
-
-  const x =
-    (canvasSize +
-      bounds.metrics.actualBoundingBoxLeft -
-      bounds.metrics.actualBoundingBoxRight) /
-    2;
-  const baseline =
-    (canvasSize +
-      bounds.metrics.actualBoundingBoxAscent -
-      bounds.metrics.actualBoundingBoxDescent) /
-    2;
-  return { x, baseline };
-}
-
-/**
- * Convert an SVG path (bceause there is no inbuilt function) string into a polyline we can walk by arc length.
- *
- * Supported commands: M, L, Q, C — absolute, no arcs, no close-path.
- * Q and C curves are flattened by sampling segments every ~2px.
- *
- * @returns {{ points: {x,y}[], cumulative: number[], length: number }}
- *   points     — flattened polyline in canvas coords
- *   cumulative — cumulative arc length at each point
- *   length     — total arc length
- */
-
-function getPathMetrics(pathData, viewBox, size) {
-  const [, , viewWidth, viewHeight] = viewBox.split(/[ ,]+/).map(Number);
-  const tokens =
-    pathData.match(/[MLCQ]|[-+]?(?:\d*\.)?\d+(?:e[-+]?\d+)?/gi) || [];
-  const points = [];
-  let index = 0;
-  let command = null;
-  let current = { x: 0, y: 0 };
-  const readPoint = () => ({
-    x: Number(tokens[index++]),
-    y: Number(tokens[index++]),
-  });
-  const appendCurve = (evaluate, estimate) => {
-    const steps = Math.max(1, Math.ceil(estimate / 2));
-    for (let step = 1; step <= steps; step++)
-      points.push(evaluate(step / steps));
-  };
-
-  while (index < tokens.length) {
-    if (/^[a-z]$/i.test(tokens[index])) command = tokens[index++];
-    if (!command || command !== command.toUpperCase())
-      throw new Error(
-        "Handwriting SVG paths must use supported absolute commands.",
-      );
-    if (command === "M") {
-      current = readPoint();
-      points.push(current);
-      command = "L"; // SVG treats subsequent coordinate pairs after M as L.
-    } else if (command === "L") {
-      const start = current;
-      const end = readPoint();
-      const distance = Math.hypot(end.x - start.x, end.y - start.y);
-      appendCurve(
-        (t) => ({
-          x: start.x + (end.x - start.x) * t,
-          y: start.y + (end.y - start.y) * t,
-        }),
-        distance,
-      );
-      current = end;
-    } else if (command === "Q") {
-      const start = current;
-      const control = readPoint();
-      const end = readPoint();
-      const estimate =
-        Math.hypot(control.x - start.x, control.y - start.y) +
-        Math.hypot(end.x - control.x, end.y - control.y);
-      appendCurve(
-        (t) => ({
-          x:
-            (1 - t) ** 2 * start.x +
-            2 * (1 - t) * t * control.x +
-            t ** 2 * end.x,
-          y:
-            (1 - t) ** 2 * start.y +
-            2 * (1 - t) * t * control.y +
-            t ** 2 * end.y,
-        }),
-        estimate,
-      );
-      current = end;
-    } else if (command === "C") {
-      const start = current;
-      const firstControl = readPoint();
-      const secondControl = readPoint();
-      const end = readPoint();
-      const estimate =
-        Math.hypot(firstControl.x - start.x, firstControl.y - start.y) +
-        Math.hypot(
-          secondControl.x - firstControl.x,
-          secondControl.y - firstControl.y,
-        ) +
-        Math.hypot(end.x - secondControl.x, end.y - secondControl.y);
-      appendCurve(
-        (t) => ({
-          x:
-            (1 - t) ** 3 * start.x +
-            3 * (1 - t) ** 2 * t * firstControl.x +
-            3 * (1 - t) * t ** 2 * secondControl.x +
-            t ** 3 * end.x,
-          y:
-            (1 - t) ** 3 * start.y +
-            3 * (1 - t) ** 2 * t * firstControl.y +
-            3 * (1 - t) * t ** 2 * secondControl.y +
-            t ** 3 * end.y,
-        }),
-        estimate,
-      );
-      current = end;
-    } else {
-      throw new Error(`Unsupported handwriting SVG command: ${command}`);
-    }
-  }
-
-  const scaleX = size / viewWidth;
-  const scaleY = size / viewHeight;
-  const scaledPoints = points.map((point) => ({
-    x: point.x * scaleX,
-    y: point.y * scaleY,
-  }));
-  const cumulative = [0];
-  for (let i = 1; i < scaledPoints.length; i++) {
-    cumulative.push(
-      cumulative[i - 1] +
-        Math.hypot(
-          scaledPoints[i].x - scaledPoints[i - 1].x,
-          scaledPoints[i].y - scaledPoints[i - 1].y,
-        ),
-    );
-  }
-  return { points: scaledPoints, cumulative, length: cumulative.at(-1) || 0 };
 }
 
 function pointAtDistance(metrics, distance) {
@@ -342,7 +188,7 @@ function projectToExpectedPath(metrics, point, fromDistance, maxAdvance) {
 
 /**
  * Stroke the slice of `metrics` between two arc-length positions.
- * Used to paint the orange guided progress (0..strokeProgress) and the
+ * Used to paint chalk progress (0..strokeProgress) and the
  * fully-completed strokes on the user canvas.
  */
 
@@ -367,21 +213,84 @@ function drawPathRange(ctx, metrics, fromDistance, toDistance, color, width) {
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
   ctx.stroke();
+  // Explicitly fill the moving endpoint as well. With a glyph mask this keeps
+  // antialiased partial strokes continuous while the learner is moving.
+  ctx.beginPath();
+  ctx.arc(end.x, end.y, width / 2, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
 }
 
-function drawPathDots(ctx, metrics, gap = 12) {
+function drawPathDots(ctx, metrics, color, gap = 13, radius = 2.5) {
   for (let distance = 0; distance <= metrics.length; distance += gap) {
     const point = pointAtDistance(metrics, distance);
     ctx.beginPath();
-    ctx.arc(point.x, point.y, 2.5, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(210, 218, 228, 0.82)";
+    ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = color;
     ctx.fill();
   }
+  const first = metrics.points[0];
   const end = pointAtDistance(metrics, metrics.length);
+  const distanceFromFirst = Math.hypot(end.x - first.x, end.y - first.y);
+  const remainder = metrics.length % gap;
+  if (distanceFromFirst < gap * 0.5 || remainder < gap * 0.5) return;
   ctx.beginPath();
-  ctx.arc(end.x, end.y, 2.5, 0, Math.PI * 2);
-  ctx.fillStyle = "rgba(210, 218, 228, 0.82)";
+  ctx.arc(end.x, end.y, radius, 0, Math.PI * 2);
+  ctx.fillStyle = color;
   ctx.fill();
+}
+
+function getChalkPalette(board) {
+  const styles = board ? getComputedStyle(board) : null;
+  const read = (name, fallback) =>
+    styles?.getPropertyValue(name).trim() || fallback;
+  return {
+    guide: read("--tracer-guide-color", "rgba(255, 255, 255, 0.32)"),
+    dots: read("--tracer-path-color", "rgba(255, 255, 255, 0.88)"),
+    remainingDots: read(
+      "--tracer-remaining-path-color",
+      "rgba(255, 255, 255, 0.38)",
+    ),
+    markerTrail: read("--tracer-marker-trail-color", "#ffc857"),
+    progress: read("--tracer-progress-color", "#f4b942"),
+    marker: read("--tracer-marker-color", "#ffd166"),
+    markerRing: read("--tracer-marker-ring-color", "#fff4cf"),
+    freehand: read("--tracer-freehand-color", "#a7f3d0"),
+  };
+}
+
+function isPointNearGlyph(glyphPixels, point, size, radius = PEN_SIZE / 2) {
+  const centerX = Math.round(point.x);
+  const centerY = Math.round(point.y);
+  for (let y = centerY - radius; y <= centerY + radius; y++) {
+    for (let x = centerX - radius; x <= centerX + radius; x++) {
+      if (x < 0 || y < 0 || x >= size || y >= size) continue;
+      if (Math.hypot(x - centerX, y - centerY) > radius) continue;
+      if (glyphPixels[(y * size + x) * 4 + 3] > 16) return true;
+    }
+  }
+  return false;
+}
+
+function maskCanvasToGlyph(canvas, glyphCanvas) {
+  if (!canvas || !glyphCanvas) return;
+  const ctx = canvas.getContext("2d");
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = "destination-in";
+  ctx.drawImage(glyphCanvas, 0, 0, canvas.width, canvas.height);
+  ctx.restore();
+}
+
+function drawGlyphMaskedLayer(ctx, glyphCanvas, size, drawLayer) {
+  const layer = document.createElement("canvas");
+  layer.width = size;
+  layer.height = size;
+  const layerCtx = layer.getContext("2d");
+  drawLayer(layerCtx);
+  layerCtx.globalCompositeOperation = "destination-in";
+  layerCtx.drawImage(glyphCanvas, 0, 0, size, size);
+  ctx.drawImage(layer, 0, 0, size, size);
 }
 
 /**
@@ -428,6 +337,8 @@ const HandwritingTracer = ({
   label,
   example,
   script,
+  fontFamily,
+  fontWeight,
   previousChar,
   nextChar,
   onPreviousCharacter,
@@ -437,11 +348,16 @@ const HandwritingTracer = ({
 }) => {
   const canvasRef = useRef(null); // User drawing canvas
   const charCanvasRef = useRef(null); // Hidden canvas with character rendered as font
-  const guideCanvasRef = useRef(null); // Visible guide canvas (outline of character)
+  const targetPixelsRef = useRef(null); // Alpha mask for the exact rendered glyph
+  const guideCanvasRef = useRef(null); // Visible glyph and reviewed path guidance
+  const glyphDisplayRef = useRef(null); // DOM glyph whose font is also used by canvas
   // Dead at the moment  const [practiceMode, setPracticeMode] = useState('guided');
-  // Dead at the moment const [hasDrawn, setHasDrawn] = useState(false);
   const [finished, setFinished] = useState(false);
-  // const [score, setScore] = useState(0); Dead at the moment
+  const [score, setScore] = useState(0);
+  const [hasDrawn, setHasDrawn] = useState(false);
+  const [readyTargetKey, setReadyTargetKey] = useState("");
+  const [targetFailure, setTargetFailure] = useState({ key: "", message: "" });
+  const [pathAlignment, setPathAlignment] = useState({ key: "", aligned: false });
   const [stars, setStars] = useState(0);
   const [activeStroke, setActiveStroke] = useState(0);
   const [completedStrokes, setCompletedStrokes] = useState(0);
@@ -449,6 +365,8 @@ const HandwritingTracer = ({
   const [canvasVersion, setCanvasVersion] = useState(0);
   const [shareStatus, setShareStatus] = useState("");
   const [showGuide, setShowGuide] = useState(true);
+  const [pointerActive, setPointerActive] = useState(false);
+  const [handDemoDistance, setHandDemoDistance] = useState(0);
   const lastPoint = useRef(null);
   const drawingPointerId = useRef(null);
   const pathErrorTotal = useRef(0);
@@ -457,20 +375,45 @@ const HandwritingTracer = ({
   const completedStrokesRef = useRef(0);
   const strokeProgressRef = useRef(0);
   const dialogRef = useRef(null);
+  const activeRenderTargetKeyRef = useRef("");
 
-  const SIZE = 400;
-  const pathDefinition = VERIFIED_HANDWRITING_PATHS[`${script}:${char}`];
-  const isGuidedCharacter = Boolean(pathDefinition);
-  // changed to below -> const guidedActive = isGuidedCharacter && practiceMode === 'guided';
-  const guidedActive = isGuidedCharacter;
+  const SIZE = CANVAS_SIZE;
+  const targetKey = JSON.stringify([
+    script,
+    char,
+    fontFamily || "",
+    fontWeight || "",
+  ]);
+  const targetReady = readyTargetKey === targetKey;
+  const targetError =
+    targetFailure.key === targetKey ? targetFailure.message : "";
+  const pathAligned =
+    pathAlignment.key === targetKey && pathAlignment.aligned;
+  const pathDefinition = HANDWRITING_PATHS[`${script}:${char}`];
   const pathMetrics = useMemo(
-    () =>
-      pathDefinition?.strokes.map((stroke) =>
-        getPathMetrics(stroke.d, pathDefinition.viewBox, SIZE),
-      ) || [],
-    [pathDefinition],
+    () => {
+      if (!Array.isArray(pathDefinition?.strokes) || !pathDefinition.strokes.length)
+        return [];
+      try {
+        return pathDefinition.strokes.map((stroke) =>
+          getPathMetrics(stroke.d, pathDefinition.viewBox, SIZE),
+        );
+      } catch {
+        return [];
+      }
+    },
+    [pathDefinition, SIZE],
   );
-  const strokeTolerance = 28;
+  const isGuidedCharacter =
+    Boolean(pathDefinition) &&
+    Array.isArray(pathDefinition.strokes) &&
+    pathMetrics.length > 0 &&
+    pathMetrics.length === pathDefinition.strokes.length;
+  const guidedActive = isGuidedCharacter && pathAligned;
+  const pathTolerance = STROKE_TOLERANCE;
+  const hasInvalidPath = Boolean(pathDefinition) && !isGuidedCharacter;
+  const hasMisalignedPath =
+    isGuidedCharacter && targetReady && !pathAligned;
 
   useEffect(() => {
     const previousFocus = document.activeElement;
@@ -512,10 +455,63 @@ const HandwritingTracer = ({
     };
   }, []);
 
-  // Render the character as a font glyph onto hidden + guide canvases
+  // Load the exact script font before rendering the trace target to canvas.
   useEffect(() => {
-    // Wait for fonts to be ready before rendering to canvas
-    document.fonts.ready.then(() => {
+    let cancelled = false;
+    const renderTarget = async () => {
+      try {
+        if (fontFamily) {
+          const loadedFaces = await document.fonts.load(
+            `${fontWeight || 400} ${GLYPH_FONT_SIZE}px ${fontFamily}`,
+            char,
+          );
+          if (!loadedFaces.some((face) => face.status === "loaded")) {
+            throw new Error("The script font did not load.");
+          }
+        } else {
+          await document.fonts.ready;
+        }
+      } catch {
+        if (!cancelled) {
+          setTargetFailure({
+            key: targetKey,
+            message: "This script glyph could not be loaded, so tracing is unavailable.",
+          });
+        }
+        return;
+      }
+      if (cancelled) return;
+      if (activeRenderTargetKeyRef.current !== targetKey) {
+        activeRenderTargetKeyRef.current = targetKey;
+        targetPixelsRef.current = null;
+        drawingPointerId.current = null;
+        lastPoint.current = null;
+        activeStrokeRef.current = 0;
+        completedStrokesRef.current = 0;
+        strokeProgressRef.current = 0;
+        pathErrorTotal.current = 0;
+        pathErrorSamples.current = 0;
+        setActiveStroke(0);
+        setCompletedStrokes(0);
+        setStrokeProgress(0);
+        setFinished(false);
+        setHasDrawn(false);
+        setPointerActive(false);
+        setHandDemoDistance(0);
+        setScore(0);
+        setStars(0);
+        setPathAlignment({ key: targetKey, aligned: false });
+        setTargetFailure({ key: targetKey, message: "" });
+        setReadyTargetKey("");
+        const drawingCanvas = canvasRef.current;
+        if (drawingCanvas) {
+          const drawingCtx = drawingCanvas.getContext("2d");
+          drawingCtx.save();
+          drawingCtx.setTransform(1, 0, 0, 1, 0, 0);
+          drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+          drawingCtx.restore();
+        }
+      }
       // ── Hidden character canvas (Fat Hitbox for scoring) ──
       const charCanvas = charCanvasRef.current;
       if (!charCanvas) return;
@@ -524,102 +520,194 @@ const HandwritingTracer = ({
       charCanvas.height = SIZE;
       charCtx.clearRect(0, 0, SIZE, SIZE);
 
+      const glyphStyle = glyphDisplayRef.current
+        ? getComputedStyle(glyphDisplayRef.current)
+        : null;
+      const targetFontFamily = fontFamily || glyphStyle?.fontFamily;
+      const targetFontWeight = fontWeight || glyphStyle?.fontWeight || "700";
+
       charCtx.textAlign = "left";
       charCtx.textBaseline = "alphabetic";
-      // Preserve ordinary glyph size; shrink only if painted bounds exceed the safe area.
+      // Measure the same font and weight used by the DOM glyph above the board.
       const { x, baseline } = fitGlyph(
         charCtx,
         char,
         SIZE,
         GLYPH_FONT_SIZE,
         GLYPH_INSET,
+        targetFontFamily,
+        targetFontWeight,
       );
 
       // Draw the exact character shape (NO thick stroke, otherwise loops close into a solid blob!)
       charCtx.fillStyle = "rgba(255,255,255,1)";
       charCtx.fillText(char, x, baseline);
+      const targetPixels = charCtx.getImageData(0, 0, SIZE, SIZE).data;
+      let hasTargetInk = false;
+      for (let index = 3; index < targetPixels.length; index += 4) {
+        if (targetPixels[index] > 16) {
+          hasTargetInk = true;
+          break;
+        }
+      }
+      if (!hasTargetInk) {
+        setTargetFailure({
+          key: targetKey,
+          message: "No traceable glyph was rendered for this character.",
+        });
+        targetPixelsRef.current = null;
+        setPathAlignment({ key: targetKey, aligned: false });
+        return;
+      }
+      targetPixelsRef.current = targetPixels;
+      setPathAlignment({
+        key: targetKey,
+        aligned:
+          isGuidedCharacter &&
+          isPathInsideGlyph(pathMetrics, targetPixels, SIZE, 4),
+      });
 
-      // ── Visible guide canvas (dashed outline) ──
+      // ── Visible guide canvas, aligned to the scoring glyph ──
       const guideCanvas = guideCanvasRef.current;
       if (!guideCanvas) return;
       const guideCtx = syncCanvasResolution(guideCanvas, SIZE);
       guideCtx.clearRect(0, 0, SIZE, SIZE);
+      const palette = getChalkPalette(guideCanvas.parentElement);
 
       // Draw a light filled version as background guide
       guideCtx.font = charCtx.font;
       guideCtx.textAlign = "left";
       guideCtx.textBaseline = "alphabetic";
-      guideCtx.fillStyle = "rgba(235, 226, 226, 0.68)";
+      guideCtx.fillStyle = palette.guide;
       guideCtx.fillText(char, x, baseline);
 
-
       if (guidedActive) {
-         // 1) Dotted path the user is meant to follow
-        pathMetrics.forEach((metrics) => drawPathDots(guideCtx, metrics));
-        if (pathMetrics[activeStroke]) {
-          const activeMetrics = pathMetrics[activeStroke];
-          const start = pointAtDistance(activeMetrics, 0);
-          const handDistance = Math.min(
-            activeMetrics.length,
-            strokeProgress + 14,
-          );
-          [24, 16, 8].forEach((offset, index) => {
-            if (handDistance < offset) return;
-            const trailPoint = pointAtDistance(
-              activeMetrics,
-              handDistance - offset,
+        drawGlyphMaskedLayer(guideCtx, charCanvas, SIZE, (layerCtx) => {
+          pathMetrics.forEach((metrics, index) => {
+            if (index < activeStroke) return;
+            drawPathDots(
+              layerCtx,
+              metrics,
+              index === activeStroke ? palette.dots : palette.remainingDots,
+              index === activeStroke ? 13 : 16,
+              index === activeStroke ? 2.5 : 2,
             );
-            guideCtx.beginPath();
-            guideCtx.arc(
+          });
+
+          const activeMetrics = pathMetrics[activeStroke];
+          if (!activeMetrics) return;
+          const start = pointAtDistance(activeMetrics, 0);
+
+          // A short yellow dotted tail points from the start marker into the
+          // active stroke, using the same centerline as validation.
+          [30, 18].forEach((distance, index) => {
+            if (activeMetrics.length < distance) return;
+            const trailPoint = pointAtDistance(activeMetrics, distance);
+            layerCtx.beginPath();
+            layerCtx.arc(
               trailPoint.x,
               trailPoint.y,
-              1.8 + index * 0.35,
+              index === 0 ? 2.2 : 3,
               0,
               Math.PI * 2,
             );
-            guideCtx.fillStyle = "rgba(238, 238, 236, 0.7)";
-            guideCtx.fill();
+            layerCtx.fillStyle = palette.markerTrail;
+            layerCtx.fill();
           });
-           //Color pill marking where to place the finger to begin.
-          guideCtx.beginPath();
-          guideCtx.arc(start.x, start.y, 7, 0, Math.PI * 2);
-          guideCtx.fillStyle = "#ffc247";
-          guideCtx.fill();
-          guideCtx.lineWidth = 2;
-          guideCtx.strokeStyle = "#fff1c2";
-          guideCtx.stroke();
-        }
-      } /* only runs when !guidedActive. With guided-only, that's never.
-      else {
-        guideCtx.lineWidth = 3;
-        guideCtx.strokeStyle = 'rgba(255,255,255,0.35)';
-        guideCtx.setLineDash([8, 6]);
-        guideCtx.strokeText(char, x, baseline);
-      } */
+
+          // Same start point used by pointer validation, clipped to glyph ink.
+          layerCtx.beginPath();
+          layerCtx.arc(start.x, start.y, 7, 0, Math.PI * 2);
+          layerCtx.fillStyle = palette.marker;
+          layerCtx.fill();
+          layerCtx.lineWidth = 2;
+          layerCtx.strokeStyle = palette.markerRing;
+          layerCtx.stroke();
+        });
+      }
 
       // Clear the user drawing canvas
       const canvas = canvasRef.current;
       if (canvas) syncCanvasResolution(canvas, SIZE);
-    });
+      setReadyTargetKey(targetKey);
+    };
+    renderTarget();
+    return () => {
+      cancelled = true;
+    };
   }, [
     char,
+    fontFamily,
+    fontWeight,
+    targetKey,
     guidedActive,
+    isGuidedCharacter,
     canvasVersion,
     activeStroke,
-    strokeProgress,
     pathMetrics,
+    SIZE,
+  ]);
+
+  // Demonstrate the active path continuously, but pause the hand when the
+  // learner takes over. The hand follows the exact metric points used by the
+  // dotted guide and pointer validator.
+  useEffect(() => {
+    const metrics = pathMetrics[activeStroke];
+    if (!guidedActive || !showGuide || finished || pointerActive || !metrics) {
+      return undefined;
+    }
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      return undefined;
+    }
+
+    let frameId = 0;
+    let startedAt = null;
+    const duration = Math.max(2800, metrics.length * 12);
+    const animate = (now) => {
+      if (startedAt === null) startedAt = now;
+      const elapsed = (now - startedAt) % duration;
+      setHandDemoDistance((elapsed / duration) * metrics.length);
+      frameId = window.requestAnimationFrame(animate);
+    };
+    frameId = window.requestAnimationFrame(animate);
+    return () => window.cancelAnimationFrame(frameId);
+  }, [
+    activeStroke,
+    finished,
+    guidedActive,
+    pathMetrics,
+    pointerActive,
+    showGuide,
   ]);
 
   useEffect(() => {
     if (!guidedActive || !canvasRef.current) return;
     const ctx = syncCanvasResolution(canvasRef.current, SIZE);
+    const palette = getChalkPalette(canvasRef.current.parentElement);
     ctx.clearRect(0, 0, SIZE, SIZE);
-    pathMetrics.forEach((metrics, index) => {
-      // PEN: stroke size for the pencil 25px
-      if (index < completedStrokes)
-        drawPathRange(ctx, metrics, 0, metrics.length, "#ebe9e6", 25);
-      else if (index === activeStroke)
-        drawPathRange(ctx, metrics, 0, strokeProgress, "#ece9e5", 25);
+    drawGlyphMaskedLayer(ctx, charCanvasRef.current, SIZE, (layerCtx) => {
+      pathMetrics.forEach((metrics, index) => {
+        // Keep the 32 px chalk stroke inside the visible character silhouette.
+        if (index < completedStrokes) {
+          drawPathRange(
+            layerCtx,
+            metrics,
+            0,
+            metrics.length,
+            palette.progress,
+            PEN_SIZE,
+          );
+        } else if (index === activeStroke) {
+          drawPathRange(
+            layerCtx,
+            metrics,
+            0,
+            strokeProgress,
+            palette.progress,
+            PEN_SIZE,
+          );
+        }
+      });
     });
   }, [
     guidedActive,
@@ -629,6 +717,7 @@ const HandwritingTracer = ({
     completedStrokes,
     strokeProgress,
     canvasVersion,
+    SIZE,
   ]);
 
   // ── Pointer coordinate helper
@@ -645,6 +734,7 @@ const HandwritingTracer = ({
   const handleStart = (e) => {
     e.preventDefault();
     if (
+      !targetReady ||
       finished ||
       drawingPointerId.current !== null ||
       (e.pointerType === "mouse" && e.button !== 0)
@@ -657,98 +747,141 @@ const HandwritingTracer = ({
       const expected = pointAtDistance(metrics, strokeProgressRef.current);
       if (
         Math.hypot(coords.x - expected.x, coords.y - expected.y) >
-        (strokeProgressRef.current === 0 ? 38 : strokeTolerance)
+        (strokeProgressRef.current === 0 ? START_TOLERANCE : pathTolerance)
       )
         return;
+    } else if (
+      !targetPixelsRef.current ||
+      !isPointNearGlyph(targetPixelsRef.current, coords, SIZE)
+    ) {
+      return;
     }
     drawingPointerId.current = e.pointerId;
     e.currentTarget.setPointerCapture(e.pointerId);
-    // read only in the Check-button gate and the surrounding helper text -> setHasDrawn(true);
     lastPoint.current = coords;
+    setPointerActive(true);
 
     if (guidedActive) return;
-    /* The if (guidedActive) return; line itself can also go — it now returns always.
+    setHasDrawn(true);
     const ctx = canvasRef.current.getContext('2d');
     ctx.beginPath();
-    ctx.arc(coords.x, coords.y, 3, 0, Math.PI * 2);
-    ctx.fillStyle = '#00e5ff';
-    ctx.fill(); */
+    ctx.arc(coords.x, coords.y, 16, 0, Math.PI * 2);
+    ctx.fillStyle = getChalkPalette(canvasRef.current.parentElement).freehand;
+    ctx.fill();
+    maskCanvasToGlyph(canvasRef.current, charCanvasRef.current);
   };
 
   const handleMove = (e) => {
     e.preventDefault();
     if (
       drawingPointerId.current !== e.pointerId ||
+      !targetReady ||
       finished ||
       !lastPoint.current
     )
       return;
-    const coords = getCoords(e);
     if (guidedActive) {
-      const strokeIndex = activeStrokeRef.current;
-      const metrics = pathMetrics[strokeIndex];
-      if (!metrics) return;
-      const movement = Math.hypot(
-        coords.x - lastPoint.current.x,
-        coords.y - lastPoint.current.y,
-      );
-      const maxAdvance = Math.max(18, Math.min(32, movement * 1.5));
-      const candidate = projectToExpectedPath(
-        metrics,
-        coords,
-        strokeProgressRef.current,
-        maxAdvance,
-      );
-      lastPoint.current = coords;
-      if (
-        !candidate ||
-        candidate.deviation > strokeTolerance ||
-        candidate.distance <= strokeProgressRef.current + 0.5
-      )
-        return;
+      const canvas = e.currentTarget;
+      const nativeEvent = e.nativeEvent || e;
+      const coalesced = nativeEvent.getCoalescedEvents?.() || [];
+      const samples = coalesced.length ? coalesced : [e];
+      let progressChanged = false;
 
-      pathErrorTotal.current += candidate.deviation;
-      pathErrorSamples.current += 1;
-      const nextProgress = Math.min(candidate.distance, metrics.length);
-      strokeProgressRef.current = nextProgress;
-      setStrokeProgress(nextProgress);
+      for (const sample of samples) {
+        if (drawingPointerId.current !== e.pointerId) break;
+        const coords = getCoords(sample);
+        const previous = lastPoint.current;
+        if (!previous) break;
+        const movement = Math.hypot(coords.x - previous.x, coords.y - previous.y);
+        lastPoint.current = coords;
 
-      if (nextProgress >= metrics.length - 5) {
-        completedStrokesRef.current += 1;
-        setCompletedStrokes(completedStrokesRef.current);
-        if (completedStrokesRef.current < pathMetrics.length) {
-          activeStrokeRef.current = completedStrokesRef.current;
-          setActiveStroke(activeStrokeRef.current);
-          strokeProgressRef.current = 0;
-          setStrokeProgress(0);
-        } else {
-          setFinished(true);
-          drawingPointerId.current = null;
-          lastPoint.current = null;
-          const meanDeviation =
-            pathErrorTotal.current / Math.max(1, pathErrorSamples.current);
-          // Stars use mean deviation from the authored centerline in canvas units: <=9, <=18, and <=28 earn 3, 2, or 1 star. Only accepted on-path samples count.
-          const earned = meanDeviation <= 9 ? 3 : meanDeviation <= 18 ? 2 : 1;
-          setStars((best) => Math.max(best, earned));
+        // Do not infer a path trace from a large unobserved pointer jump.
+        if (movement > MAX_POINTER_SAMPLE_GAP) continue;
+        const steps = Math.max(1, Math.ceil(movement / TRACE_SAMPLE_SPACING));
+        for (let step = 1; step <= steps; step++) {
+          if (drawingPointerId.current !== e.pointerId) break;
+          const ratio = step / steps;
+          const point = {
+            x: previous.x + (coords.x - previous.x) * ratio,
+            y: previous.y + (coords.y - previous.y) * ratio,
+          };
+          const priorRatio = (step - 1) / steps;
+          const priorPoint = {
+            x: previous.x + (coords.x - previous.x) * priorRatio,
+            y: previous.y + (coords.y - previous.y) * priorRatio,
+          };
+          const pointMovement = Math.hypot(
+            point.x - priorPoint.x,
+            point.y - priorPoint.y,
+          );
+          const metrics = pathMetrics[activeStrokeRef.current];
+          if (!metrics) break;
+          const fromDistance = strokeProgressRef.current;
+          const allowedAdvance = Math.min(
+            MAX_TRACE_ADVANCE,
+            Math.max(3, pointMovement * 1.8 + 2),
+          );
+          const candidate = projectToExpectedPath(
+            metrics,
+            point,
+            fromDistance,
+            allowedAdvance,
+          );
+          if (
+            !candidate ||
+            candidate.deviation > PATH_SAMPLE_TOLERANCE ||
+            candidate.distance <= fromDistance + 0.5 ||
+            candidate.distance - fromDistance > pointMovement * 1.8 + 2
+          )
+            continue;
+
+          pathErrorTotal.current += candidate.deviation;
+          pathErrorSamples.current += 1;
+          strokeProgressRef.current = Math.min(candidate.distance, metrics.length);
+          progressChanged = true;
+
+          if (strokeProgressRef.current >= metrics.length - 5) {
+            completedStrokesRef.current += 1;
+            setCompletedStrokes(completedStrokesRef.current);
+            drawingPointerId.current = null;
+            lastPoint.current = null;
+            setPointerActive(false);
+            if (completedStrokesRef.current < pathMetrics.length) {
+              activeStrokeRef.current = completedStrokesRef.current;
+              setActiveStroke(activeStrokeRef.current);
+              strokeProgressRef.current = 0;
+              setStrokeProgress(0);
+              setHandDemoDistance(0);
+            } else {
+              setFinished(true);
+              const meanDeviation =
+                pathErrorTotal.current / Math.max(1, pathErrorSamples.current);
+              const earned = meanDeviation <= 9 ? 3 : meanDeviation <= 16 ? 2 : 1;
+              setStars((best) => Math.max(best, earned));
+            }
+            // Each authored pen motion requires a fresh pointer-down.
+            if (canvas.hasPointerCapture(e.pointerId))
+              canvas.releasePointerCapture(e.pointerId);
+            return;
+          }
         }
-        if (e.currentTarget.hasPointerCapture(e.pointerId))
-          e.currentTarget.releasePointerCapture(e.pointerId);
       }
+      if (progressChanged) setStrokeProgress(strokeProgressRef.current);
       return;
     }
-    /* dead at the moment 
+    const coords = getCoords(e);
     const ctx = canvasRef.current.getContext('2d');
-    ctx.strokeStyle = '#00e5ff';
-    ctx.lineWidth = 16;
+    ctx.strokeStyle = getChalkPalette(canvasRef.current.parentElement).freehand;
+    ctx.lineWidth = PEN_SIZE;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.beginPath();
     ctx.moveTo(lastPoint.current.x, lastPoint.current.y);
     ctx.lineTo(coords.x, coords.y);
     ctx.stroke();
+    maskCanvasToGlyph(canvasRef.current, charCanvasRef.current);
 
     lastPoint.current = coords;
-    */
   };
 
   const handleEnd = (e) => {
@@ -756,28 +889,26 @@ const HandwritingTracer = ({
     if (drawingPointerId.current !== e.pointerId) return;
     drawingPointerId.current = null;
     lastPoint.current = null;
+    setPointerActive(false);
   };
 
-  /* Dead at the moment
   const handleCheck = () => {
     if (!hasDrawn) return;
-    if (isGuidedCharacter) {
-      setFinished(true);
-      return;
-    }
-    const accuracy = computeAccuracy(canvasRef.current, charCanvasRef.current);
-    setScore(accuracy);
+    setScore(computeAccuracy(canvasRef.current, charCanvasRef.current));
     setFinished(true);
-  };*/
+  };
 
   const handleReset = () => {
     const ctx = canvasRef.current.getContext("2d");
     ctx.clearRect(0, 0, SIZE, SIZE);
     drawingPointerId.current = null;
     lastPoint.current = null;
+    setPointerActive(false);
+    setHandDemoDistance(0);
     //setHasDrawn(false);
     setFinished(false);
-    //setScore(0);
+    setHasDrawn(false);
+    setScore(0);
     activeStrokeRef.current = 0;
     completedStrokesRef.current = 0;
     strokeProgressRef.current = 0;
@@ -814,14 +945,17 @@ const HandwritingTracer = ({
       setShareStatus("Image export is unavailable in this browser.");
       return;
     }
-    const file = new File([blob], "kannada-a-practice.png", {
+    const safeScript = (script || "script")
+      .toLowerCase()
+      .replace(/[^a-z0-9-]+/g, "-");
+    const file = new File([blob], `langbridge-${safeScript}-practice.png`, {
       type: "image/png",
     });
     if (navigator.share && navigator.canShare?.({ files: [file] })) {
       try {
         await navigator.share({
           files: [file],
-          title: "Kannada ಅ handwriting practice",
+          title: `${script || "Script"} handwriting practice`,
         });
         setShareStatus("Practice image shared.");
         return;
@@ -848,10 +982,10 @@ const HandwritingTracer = ({
   }; */
 
   const handPoint =
-    guidedActive && !finished && pathMetrics[activeStroke]
+    guidedActive && !finished && !pointerActive && pathMetrics[activeStroke]
       ? pointAtDistance(
           pathMetrics[activeStroke],
-          Math.min(pathMetrics[activeStroke].length, strokeProgress + 14),
+          handDemoDistance,
         )
       : null;
   const previewButtonStyle = {
@@ -916,12 +1050,12 @@ const HandwritingTracer = ({
         >
           <button
             type="button"
-            aria-label={`Close tracing for ${char}`}
+            aria-label={`Close tracing for ${label || "this character"}`}
             onClick={onClose}
             style={{
-              background: "rgba(255,255,255,0.08)",
-              border: "none",
-              color: "#fff",
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--border-default)",
+              color: "var(--text-primary)",
               cursor: "pointer",
               borderRadius: 10,
               padding: "8px 10px",
@@ -946,8 +1080,16 @@ const HandwritingTracer = ({
             >
               Trace the character
             </div>
-            <div style={{ fontSize: 32, fontWeight: "bold", marginTop: 2 }}>
-              {char}
+            <div
+              ref={glyphDisplayRef}
+              style={{
+                fontSize: 32,
+                fontWeight: fontWeight || (fontFamily ? 400 : 800),
+                marginTop: 2,
+                fontFamily: fontFamily || "var(--font-body)",
+              }}
+            >
+              {targetReady ? char : label}
             </div>
             {label && (
               <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>
@@ -960,9 +1102,9 @@ const HandwritingTracer = ({
             aria-label="Clear drawing"
             onClick={handleReset}
             style={{
-              background: "rgba(255,255,255,0.08)",
-              border: "none",
-              color: "#fff",
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--border-default)",
+              color: "var(--text-primary)",
               cursor: "pointer",
               borderRadius: 10,
               padding: "8px 10px",
@@ -989,11 +1131,6 @@ const HandwritingTracer = ({
             Example: {example}
           </p>
         )}
-        {/* Dead at the moment  {isGuidedCharacter && <div aria-label="Character navigation" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, margin: '8px auto', maxWidth: 400 }}>
-        <button type="button" disabled={!previousChar || !onPreviousCharacter} onClick={onPreviousCharacter} style={{ ...previewButtonStyle, opacity: previousChar && onPreviousCharacter ? 1 : 0.45 }} aria-label={previousChar ? `Previous character ${previousChar}` : 'No previous character'}><ArrowLeft size={16} aria-hidden="true" /> {previousChar || 'Previous'}</button>
-        <strong aria-current="true" style={{ fontSize: 20 }}>{char}</strong>
-        <button type="button" disabled={!nextChar || !onNextCharacter} onClick={onNextCharacter} style={{ ...previewButtonStyle, opacity: nextChar && onNextCharacter ? 1 : 0.45 }} aria-label={nextChar ? `Next character ${nextChar}` : 'No next character'}>{nextChar || 'Next'} <ArrowRight size={16} aria-hidden="true" /></button>
-      </div>} */}
         <div
           aria-label="Character navigation"
           style={{
@@ -1013,17 +1150,13 @@ const HandwritingTracer = ({
               ...previewButtonStyle,
               opacity: previousChar && onPreviousCharacter ? 1 : 0.45,
             }}
-            aria-label={
-              previousChar
-                ? `Previous character ${previousChar}`
-                : "No previous character"
-            }
+            aria-label="Previous character"
+            title="Previous character"
           >
-            <ArrowLeft size={16} aria-hidden="true" />{" "}
-            {previousChar || "Previous"}
+            <ArrowLeft size={18} aria-hidden="true" />
           </button>
-          <strong aria-current="true" style={{ fontSize: 20 }}>
-            {char}
+          <strong aria-current="true" style={{ fontSize: 20, fontFamily, fontWeight }}>
+            {targetReady ? char : label}
           </strong>
           <button
             type="button"
@@ -1033,11 +1166,10 @@ const HandwritingTracer = ({
               ...previewButtonStyle,
               opacity: nextChar && onNextCharacter ? 1 : 0.45,
             }}
-            aria-label={
-              nextChar ? `Next character ${nextChar}` : "No next character"
-            }
+            aria-label="Next character"
+            title="Next character"
           >
-            {nextChar || "Next"} <ArrowRight size={16} aria-hidden="true" />
+            <ArrowRight size={18} aria-hidden="true" />
           </button>
         </div>
         <p
@@ -1049,11 +1181,19 @@ const HandwritingTracer = ({
           }}
         >
           {guidedActive
-            ? "Begin at the yellow marker. Follow the dots in order; you can retry at any time."
-            : isGuidedCharacter
-              ? "Freehand practice is active. Clear and try again whenever you like."
-              : "Trace the faint guide with your finger or mouse. Stroke order guidance is not available for this character yet."}
+            ? "Begin at the yellow marker. Follow the active stroke in order, lift your finger at each stroke end, then start at the next marker."
+            : "Practise freehand over the faint glyph. Ordered stroke guidance is not available for this character yet."}
         </p>
+        {hasInvalidPath && (
+          <p role="status" style={{ textAlign: "center", color: "var(--text-muted)", fontSize: 12 }}>
+            Saved path data failed validation, so only freehand practice is available.
+          </p>
+        )}
+        {hasMisalignedPath && (
+          <p role="status" style={{ textAlign: "center", color: "var(--text-muted)", fontSize: 12 }}>
+            The saved path does not match this rendered glyph, so guided tracing is disabled for this character.
+          </p>
+        )}
         {isGuidedCharacter && (
           <div
             style={{
@@ -1087,6 +1227,7 @@ const HandwritingTracer = ({
           </p>
         )}
         <div
+          className="handwriting-tracer-board"
           style={{
             position: "relative",
             width: "min(100%, 400px)",
@@ -1094,7 +1235,6 @@ const HandwritingTracer = ({
             aspectRatio: "1/1",
             flexShrink: 1,
             margin: "0 auto",
-            background: "#2E4A3A",
             borderRadius: 16,
             border: "2px solid rgba(255,255,255,0.12)",
             overflow: "hidden",
@@ -1134,6 +1274,25 @@ const HandwritingTracer = ({
             onPointerCancel={handleEnd}
             onLostPointerCapture={handleEnd}
           />
+          {!targetReady && (
+            <div
+              role={targetError ? "alert" : "status"}
+              style={{
+                position: "absolute",
+                inset: 0,
+                zIndex: 4,
+                display: "grid",
+                placeItems: "center",
+                padding: 20,
+                background: "rgba(24, 38, 31, 0.96)",
+                color: "#f1f5f2",
+                fontSize: 14,
+                textAlign: "center",
+              }}
+            >
+              {targetError || "Loading the script glyph…"}
+            </div>
+          )}
           {handPoint && showGuide && (
             <svg
               className="handwriting-pointer"
@@ -1155,7 +1314,7 @@ const HandwritingTracer = ({
             >
               <path
                 d="M10 33c-3.8 0-6.1-2.2-6.1-5.7v-8.1c0-1.5 2.2-2 3-.5l1.8 3V7.1c0-2.5 3.6-2.5 3.6 0v9.1l1.1-4c.7-2.4 4.1-1.6 3.7.8l-.4 2.3 1-2.1c1.1-2.2 4.2-.9 3.2 1.5l-.6 1.6 1.1-1.2c1.6-1.7 4.1.3 2.7 2.2l-3.7 5.2v5.1c0 3.7-2.4 6.4-6 6.4H10Z"
-                fill="#ffd16a"
+                fill="var(--tracer-marker-color, #ffd166)"
                 stroke="#583c17"
                 strokeWidth="1.5"
                 strokeLinejoin="round"
@@ -1169,7 +1328,7 @@ const HandwritingTracer = ({
             </svg>
           )}
         </div>
-        {isGuidedCharacter && (
+        {guidedActive && (
           <p
             style={{
               display: "flex",
@@ -1198,7 +1357,7 @@ const HandwritingTracer = ({
             </span>
           </p>
         )}
-        {isGuidedCharacter && (
+        {guidedActive && (
           <p
             style={{
               margin: "5px 0 0",
@@ -1207,13 +1366,18 @@ const HandwritingTracer = ({
               color: "var(--text-muted)",
             }}
           >
-            Provisional path adapted from{" "}
-            <a href={pathDefinition.source} target="_blank" rel="noreferrer">
-              Kannada-alphabet-a.gif
-            </a>{" "}
-            by {pathDefinition.sourceAuthor}; {pathDefinition.sourceLicense}.
-            The path is a prototype transcription, not an authoritative stroke
-            standard.
+            {pathDefinition.verificationStatus === "verified"
+              ? "Manually verified path. "
+              : "Provisional path. "}
+            {pathDefinition.verificationNote}{" "}
+            {pathDefinition.source && (
+              <>
+                Reference: <a href={pathDefinition.source} target="_blank" rel="noreferrer">
+                  {pathDefinition.sourceAuthor || "source"}
+                </a>
+                {pathDefinition.sourceLicense && ` · ${pathDefinition.sourceLicense}`}
+              </>
+            )}
           </p>
         )}
         {/* Controls */}
@@ -1225,7 +1389,6 @@ const HandwritingTracer = ({
                 animation: "fadeUp 0.3s ease-out both",
               }}
             >
-              {/* isGuidedCharacter is now always true, so the : <> … getFeedback(score) … </> arm is unreachable. Removing it removes the reference to getFeedback and score */}
               <div
                 role="status"
                 style={{
@@ -1234,10 +1397,12 @@ const HandwritingTracer = ({
                   color: "var(--text-primary)",
                 }}
               >
-                Guided path complete
+                {guidedActive ? "Guided path complete" : "Trace complete"}
               </div>
               <p style={{ margin: "8px 0", color: "var(--text-secondary)" }}>
-                Best path tracking: {stars} of 3 stars.
+                {guidedActive
+                  ? `Best path tracking: ${stars} of 3 stars.`
+                  : `Your trace matched ${score}% of the glyph guide. Keep practising at your own pace.`}
               </p>
               <div
                 style={{
@@ -1267,10 +1432,10 @@ const HandwritingTracer = ({
                   />{" "}
                   Retry
                 </button>
-                {(!isGuidedCharacter || nextChar) && (
+                {(!guidedActive || nextChar) && (
                   <button
                     onClick={
-                      isGuidedCharacter ? onNextCharacter || onNext : onNext
+                      guidedActive ? onNextCharacter || onNext : onNext
                     }
                     style={{
                       padding: "10px 24px",
@@ -1284,24 +1449,45 @@ const HandwritingTracer = ({
                       transition: "all 0.2s",
                     }}
                   >
-                    Next →
+                    <ArrowRight size={16} aria-hidden="true" /> Next
                   </button>
                 )}
               </div>
             </div>
           ) : (
-            <p
-              role="status"
-              style={{
-                textAlign: "center",
-                color: "var(--text-secondary)",
-                fontSize: 14,
-                margin: 0,
-              }}
-            >
-              Trace stroke {Math.min(activeStroke + 1, pathMetrics.length)} of{" "}
-              {pathMetrics.length} from its yellow start marker.
-            </p>
+            <>
+              <p
+                role="status"
+                style={{
+                  textAlign: "center",
+                  color: "var(--text-secondary)",
+                  fontSize: 14,
+                  margin: 0,
+                }}
+              >
+                {guidedActive
+                  ? `Trace stroke ${Math.min(activeStroke + 1, pathMetrics.length)} of ${pathMetrics.length} from its yellow start marker.`
+                  : hasDrawn
+                    ? "Your trace is ready for feedback."
+                    : "Trace over the faint glyph guide."}
+              </p>
+              {!guidedActive && (
+                <button
+                  type="button"
+                  onClick={handleCheck}
+                  disabled={!targetReady || !hasDrawn}
+                  style={{
+                    ...buttonStyle,
+                    display: "flex",
+                    margin: "12px auto 0",
+                    opacity: targetReady && hasDrawn ? 1 : 0.5,
+                    cursor: targetReady && hasDrawn ? "pointer" : "not-allowed",
+                  }}
+                >
+                  Check trace
+                </button>
+              )}
+            </>
           )}
         </div>
         {/* Guide toggle */}

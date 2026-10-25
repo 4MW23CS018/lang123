@@ -1,5 +1,174 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Instrument+Serif&display=swap');
 
+/* Nirmala UI is preferred when the device provides it. These bundled OFL
+   families supply the same script-specific fallback on other platforms. */
+@font-face {
+  font-family: 'LangBridge Noto Kannada UI';
+  src: url('/fonts/NotoSansKannadaUI.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  unicode-range: U+0C80-0CFF;
+}
+
+@font-face {
+  font-family: 'LangBridge Noto Kannada';
+  src: url('/fonts/NotoSansKannada.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  unicode-range: U+0C80-0CFF;
+}
+
+@font-face {
+  font-family: 'LangBridge Noto Tamil';
+  src: url('/fonts/NotoSansTamil.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  unicode-range: U+0B80-0BFF;
+}
+
+@font-face {
+  font-family: 'LangBridge Noto Telugu';
+  src: url('/fonts/NotoSansTelugu.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  unicode-range: U+0C00-0C7F;
+}
+
+@font-face {
+  font-family: 'LangBridge Noto Malayalam';
+  src: url('/fonts/NotoSansMalayalam.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  unicode-range: U+0D00-0D7F;
+}
+
+@font-face {
+  font-family: 'Mallige Tulu Tigalari';
+  src: url('/fonts/Mallige-Tulu-Tigalari.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'LangBridge Tulu Numerals';
+  src: url('/fonts/LangBridgeTulu.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  unicode-range: U+F100-F109;
+}
+
+@font-face {
+  font-family: 'LangBridge Kodava';
+  src: url('/fonts/LangBridgeKodava.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  unicode-range: U+E000-E024;
+}
+
+.tulu-tigalari {
+  font-family: 'Mallige Tulu Tigalari', serif;
+}
+
+.basics-custom-script-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1;
+  user-select: text;
+}
+
+.basics-custom-script-glyph--tulu {
+  font-family: 'LangBridge Tulu Numerals';
+}
+
+.basics-custom-script-glyph--kodava {
+  font-family: 'LangBridge Kodava';
+}
+
+.basics-glyph-fallback {
+  display: inline-flex;
+  min-width: 92px;
+  min-height: 72px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--text-primary);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.basics-glyph-fallback small {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.basics-card-note {
+  width: 100%;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.basics-card-note summary {
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.basics-card-note p,
+.basics-card-note-text {
+  margin: 5px 0 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+  text-align: center;
+}
+
+/* Canvas colors are read from the board so chalk remains theme-aware. */
+.handwriting-tracer-board {
+  --tracer-board-background: #2e4a3a;
+  --tracer-guide-color: rgba(255, 255, 255, 0.3);
+  --tracer-path-color: rgba(255, 255, 255, 0.9);
+  --tracer-remaining-path-color: rgba(255, 255, 255, 0.38);
+  --tracer-progress-color: #f4b942;
+  --tracer-marker-color: #ffd13b;
+  --tracer-marker-trail-color: #ffc857;
+  --tracer-marker-ring-color: #fff4cf;
+  --tracer-freehand-color: #a7f3d0;
+  background-color: var(--tracer-board-background);
+  background-image:
+    radial-gradient(ellipse at 18% 16%, rgba(220, 181, 124, 0.09), transparent 42%),
+    radial-gradient(ellipse at 84% 82%, rgba(12, 28, 20, 0.12), transparent 48%),
+    repeating-linear-gradient(2deg, rgba(255, 255, 255, 0.015) 0 1px, rgba(8, 18, 13, 0.018) 1px 3px);
+}
+
+[data-theme="light"] .handwriting-tracer-board {
+  --tracer-guide-color: rgba(255, 255, 255, 0.28);
+  --tracer-path-color: rgba(255, 255, 255, 0.92);
+  --tracer-remaining-path-color: rgba(255, 255, 255, 0.38);
+  --tracer-progress-color: #f4b942;
+  --tracer-marker-color: #ffd13b;
+  --tracer-marker-trail-color: #ffc857;
+  --tracer-marker-ring-color: #fff4cf;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    LangBridge — Design System v3
    Dark mode default, light mode toggle
