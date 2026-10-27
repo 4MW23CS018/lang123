@@ -82,10 +82,11 @@ def assess_audio():
 
 @app.route('/transcribe', methods=['POST'])
 def transcribe_audio():
-    data = request.json
+    data = request.json or {}
     language = data.get('language', '').lower()
 
-    if 'audio_base64' in data:
+    if 'audio_base64' in data and data['audio_base64']:
+        base64_len = len(data['audio_base64'])
         audio_bytes = base64.b64decode(data['audio_base64'])
     else:
         return jsonify({'error': 'No audio provided'}), 400
@@ -96,31 +97,35 @@ def transcribe_audio():
             tmp.write(audio_bytes)
             tmp_path = tmp.name
 
-        # Whisper handles raw webm files natively perfectly.
-        # Skip heavy noise reduction preprocessing for chat to make it lightning fast.
-        preprocessed_path = tmp_path
+        file_size = os.path.getsize(tmp_path)
+        print(f"[TRANSCRIBE] Payload received: base64_chars={base64_len}, decoded_file_size={file_size} bytes, language='{language}'")
 
-        # 2. Local Whisper transcription (Use selected language)
-        transcribed_text = transcribe(preprocessed_path, language, phrase="", phonetics="")
+        if file_size < 300:
+            print("[TRANSCRIBE WARN] Recorded audio file is too short/empty (< 300 bytes), skipping transcription")
+            return jsonify({'text': ''})
+
+        # Local Faster-Whisper transcription
+        transcribed_text = transcribe(tmp_path, language, phrase="", phonetics="")
 
         return jsonify({
             'text': transcribed_text
         })
     except Exception as e:
         safe_error = str(e).encode('ascii', 'backslashreplace').decode('ascii')
-        print(f"[ERROR] {safe_error}")
+        print(f"[ERROR in /transcribe] {safe_error}")
         return jsonify({'error': safe_error}), 500
     finally:
         if tmp_path and os.path.exists(tmp_path):
-            os.remove(tmp_path)
-        if 'preprocessed_path' in locals() and preprocessed_path and preprocessed_path != tmp_path and os.path.exists(preprocessed_path):
-            os.remove(preprocessed_path)
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
 
 
 @app.route('/tts', methods=['POST'])
 def text_to_speech():
     """Generate audio pronunciation for a phrase in the given language."""
-    data = request.json
+    data = request.json or {}
     phrase = data.get('phrase', '')
     language = data.get('language', '').lower()
 
@@ -132,6 +137,30 @@ def text_to_speech():
     if not cleaned_phrase:
         cleaned_phrase = phrase
 
+    # 1. Primary: Use gemini-3.8-flash-lite-tts
+    try:
+        from pronunciation import client
+        if client:
+            resp = client.models.generate_content(
+                model='gemini-3.8-flash-lite-tts',
+                contents=cleaned_phrase,
+            )
+            if resp.candidates and resp.candidates[0].content.parts:
+                part = resp.candidates[0].content.parts[0]
+                if hasattr(part, 'inline_data') and part.inline_data and part.inline_data.data:
+                    audio_buffer = io.BytesIO(part.inline_data.data)
+                    mime_type = part.inline_data.mime_type or 'audio/wav'
+                    download_ext = 'wav' if 'wav' in mime_type else 'mp3'
+                    return send_file(
+                        audio_buffer,
+                        mimetype=mime_type,
+                        as_attachment=False,
+                        download_name=f'pronunciation.{download_ext}'
+                    )
+    except Exception as gemini_err:
+        print(f"[TTS WARN] gemini-3.8-flash-lite-tts failed, falling back to gTTS: {gemini_err}")
+
+    # 2. Fallback: gTTS
     lang_code = LANGUAGE_CODES.get(language, language[:2])
 
     try:

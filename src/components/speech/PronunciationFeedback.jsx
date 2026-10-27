@@ -1,43 +1,7 @@
 // src/components/speech/PronunciationFeedback.jsx
 import { useEffect, useState } from "react";
 
-function AccuracyRing({ accuracy }) {
-  const size = 120;
-  const stroke = 8;
-  const r = (size - stroke * 2) / 2;
-  const circ = 2 * Math.PI * r;
-  const [animated, setAnimated] = useState(0);
 
-  useEffect(() => {
-    const t = setTimeout(() => setAnimated(accuracy), 100);
-    return () => clearTimeout(t);
-  }, [accuracy]);
-
-  const color = accuracy >= 80 ? '#2ecc71' : accuracy >= 50 ? '#facc15' : '#ef4444';
-  const label = accuracy >= 80 ? 'Excellent! 🎉' : accuracy >= 50 ? 'Good try! 💪' : 'Keep practicing 🔄';
-  const dash = (animated / 100) * circ;
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-      <div style={{ position: 'relative', width: size, height: size }}>
-        <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-          <circle cx={size / 2} cy={size / 2} r={r} fill="none"
-            stroke="var(--border-subtle)" strokeWidth={stroke} />
-          <circle cx={size / 2} cy={size / 2} r={r} fill="none"
-            stroke={color} strokeWidth={stroke}
-            strokeDasharray={`${dash} ${circ}`}
-            strokeLinecap="round"
-            style={{ transition: 'stroke-dasharray 1s ease, stroke 0.5s ease' }} />
-        </svg>
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ color, fontSize: '26px', fontWeight: '900', lineHeight: 1 }}>{accuracy}%</span>
-          <span style={{ color: 'var(--text-muted)', fontSize: '10px', fontWeight: '600', marginTop: '2px' }}>accuracy</span>
-        </div>
-      </div>
-      <span style={{ color, fontSize: '14px', fontWeight: '700' }}>{label}</span>
-    </div>
-  );
-}
 
 /**
  * Renders a phonetics string like "Na-mas-kaa-ra" as styled syllable bubbles.
@@ -118,8 +82,12 @@ export default function PronunciationFeedback({ feedback }) {
       flexDirection: 'column',
       gap: '20px',
     }}>
-      {/* Accuracy ring */}
-      <AccuracyRing accuracy={accuracy} />
+      {/* Feedback Status Header */}
+      <div style={{ textAlign: 'center', padding: '4px 0' }}>
+        <span style={{ color, fontSize: '22px', fontWeight: '800' }}>
+          {accuracy >= 80 ? 'Excellent! 🎉' : accuracy >= 50 ? 'Good try! 💪' : 'Keep practicing 🔄'}
+        </span>
+      </div>
 
       <div style={{ height: '1px', background: 'var(--border-subtle)' }} />
 
@@ -155,6 +123,8 @@ export default function PronunciationFeedback({ feedback }) {
                 let itemBg, itemBorder, itemText, icon;
                 if (item.status === "correct") {
                   itemBg = "rgba(46,204,113,0.1)"; itemBorder = "rgba(46,204,113,0.3)"; itemText = "#2ecc71"; icon = "✅";
+                } else if (item.status === "partial") {
+                  itemBg = "rgba(234,179,8,0.12)"; itemBorder = "rgba(234,179,8,0.35)"; itemText = "#eab308"; icon = "◐";
                 } else if (item.status === "mispronounced") {
                   itemBg = "rgba(250,204,21,0.1)"; itemBorder = "rgba(250,204,21,0.3)"; itemText = "#facc15"; icon = "⚠️";
                 } else {
@@ -162,19 +132,31 @@ export default function PronunciationFeedback({ feedback }) {
                 }
 
                 return (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: itemBg, border: `1px solid ${itemBorder}`, borderRadius: '8px', padding: '8px 12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '14px' }}>{icon}</span>
-                      <span style={{ color: 'var(--text-primary)', fontSize: '15px', fontWeight: '600' }}>{item.word}</span>
-                    </div>
-                    {item.status === "mispronounced" && item.spoken_as && (
-                      <div style={{ fontSize: '12px', color: itemText, background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '4px' }}>
-                        Heard: <em>{item.spoken_as}</em>
+                  <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 4, background: itemBg, border: `1px solid ${itemBorder}`, borderRadius: '8px', padding: '8px 12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '14px' }}>{icon}</span>
+                        <span style={{ color: 'var(--text-primary)', fontSize: '15px', fontWeight: '600' }}>{item.word}</span>
                       </div>
-                    )}
-                    {item.status === "missing" && (
-                      <div style={{ fontSize: '12px', color: itemText, background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '4px' }}>
-                        Missing
+                      {item.status === "partial" && (
+                        <div style={{ fontSize: '12px', color: itemText, background: 'rgba(0,0,0,0.2)', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
+                          Partial
+                        </div>
+                      )}
+                      {item.status === "mispronounced" && item.spoken_as && (
+                        <div style={{ fontSize: '12px', color: itemText, background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '4px' }}>
+                          Heard: <em>{item.spoken_as}</em>
+                        </div>
+                      )}
+                      {item.status === "missing" && (
+                        <div style={{ fontSize: '12px', color: itemText, background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '4px' }}>
+                          Missing
+                        </div>
+                      )}
+                    </div>
+                    {item.note && item.status !== "correct" && (
+                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)', paddingLeft: '22px' }}>
+                        {item.note}
                       </div>
                     )}
                   </div>

@@ -91,27 +91,85 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
     const isSuccess = feedback.accuracy >= 80;
 
     const BreakdownView = () => (
-      <div style={{ width: '100%', maxWidth: 400, margin: '0 auto' }}>
+      <div style={{ width: '100%', maxWidth: 440, margin: '0 auto' }}>
+        {/* Faster-Whisper transcribed text */}
+        {feedback.transcription && (
+          <div style={{
+            background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)',
+            borderRadius: 12, padding: '10px 16px', marginBottom: 18, textAlign: 'center',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
+          }}>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+              You said:
+            </span>
+            <span style={{ color: 'var(--text-primary)', fontSize: 16, fontWeight: 700 }}>
+              "{feedback.transcription}"
+            </span>
+          </div>
+        )}
+
+        {/* Word breakdown badges */}
         {feedback.word_breakdown && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center', marginBottom: 24 }}>
-            {feedback.word_breakdown.map((w, i) => (
-              <span key={i} style={{ 
-                padding: '6px 12px', borderRadius: 8, fontWeight: 600, fontSize: 16,
-                background: w.status === 'correct' ? 'rgba(34,197,94,0.15)' : w.status === 'mispronounced' ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.15)',
-                color: w.status === 'correct' ? '#22c55e' : w.status === 'mispronounced' ? '#f59e0b' : '#ef4444',
-                border: `1px solid ${w.status === 'correct' ? 'rgba(34,197,94,0.3)' : w.status === 'mispronounced' ? 'rgba(245,158,11,0.3)' : 'rgba(239,68,68,0.3)'}`
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginBottom: 18 }}>
+            {feedback.word_breakdown.map((w, i) => {
+              const isCorrect = w.status === 'correct';
+              const isPartial = w.status === 'partial';
+              const isMis = w.status === 'mispronounced';
+              const bg = isCorrect ? 'rgba(34,197,94,0.15)' : isPartial ? 'rgba(234,179,8,0.18)' : isMis ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.15)';
+              const color = isCorrect ? '#22c55e' : isPartial ? '#eab308' : isMis ? '#f59e0b' : '#ef4444';
+              const border = isCorrect ? 'rgba(34,197,94,0.3)' : isPartial ? 'rgba(234,179,8,0.4)' : isMis ? 'rgba(245,158,11,0.3)' : 'rgba(239,68,68,0.3)';
+
+              return (
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                  <span style={{ 
+                    padding: '6px 14px', borderRadius: 10, fontWeight: 700, fontSize: 16,
+                    background: bg, color: color, border: `1px solid ${border}`,
+                    display: 'inline-flex', alignItems: 'center', gap: 6
+                  }}>
+                    <span>{isCorrect ? '✓' : isPartial ? '◐' : isMis ? '⚠' : '✕'}</span>
+                    {w.word}
+                  </span>
+                  {isPartial && w.missing_part && (
+                    <span style={{ fontSize: 11, color: '#eab308', fontWeight: 600 }}>
+                      missed: {w.missing_part}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Diagnostic detailed notes if partial or missing */}
+        {feedback.word_breakdown?.some(w => w.status === 'partial' || (w.note && w.status !== 'correct')) && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 18 }}>
+            {feedback.word_breakdown.filter(w => w.status === 'partial' || (w.note && w.status !== 'correct')).map((w, idx) => (
+              <div key={idx} style={{
+                fontSize: 13, padding: '8px 14px', borderRadius: 10,
+                background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.25)',
+                color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                lineHeight: 1.4
               }}>
-                {w.word}
-              </span>
+                <span style={{ fontWeight: 600 }}>{w.note || `Partial match on "${w.word}"`}</span>
+              </div>
             ))}
           </div>
         )}
         
+        {/* AI Tutor tip */}
         {feedback.ai_tip && (
-            <div style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-default)', padding: 16, borderRadius: 12, marginBottom: 24, textAlign: 'left' }}>
-              <p style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>💡 AI Tip</p>
-              <p style={{ margin: 0, fontSize: 15, color: 'var(--text-primary)', lineHeight: 1.5 }}>{feedback.ai_tip}</p>
-            </div>
+          <div style={{
+            background: 'var(--bg-elevated)', border: '1px solid var(--border-default)',
+            padding: 16, borderRadius: 14, marginBottom: 24, textAlign: 'left',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+          }}>
+            <p style={{ margin: 0, fontSize: 11, color: 'var(--purple, #a855f7)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span>💡</span> Tutor's Feedback
+            </p>
+            <p style={{ margin: 0, fontSize: 15, color: 'var(--text-primary)', lineHeight: 1.5, fontWeight: 500 }}>
+              {feedback.ai_tip}
+            </p>
+          </div>
         )}
       </div>
     );
@@ -122,8 +180,7 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
         {isSuccess ? (
           <div style={{ textAlign: 'center', zIndex: 10 }}>
             <div style={{ fontSize: 80, animation: 'bouncePulse 2s infinite ease-in-out' }}>🎉</div>
-            <h2 style={{ color: '#22c55e', fontSize: 32, fontWeight: 800, margin: '16px 0 8px' }}>Awesome Job!</h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: 18, margin: '0 0 24px' }}>Accuracy: {Math.round(feedback.accuracy)}%</p>
+            <h2 style={{ color: '#22c55e', fontSize: 32, fontWeight: 800, margin: '16px 0 24px' }}>Awesome Job!</h2>
 
             <BreakdownView />
 
@@ -158,8 +215,7 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
         ) : (
           <div style={{ textAlign: 'center', zIndex: 10 }}>
             <div style={{ fontSize: 80 }}>😅</div>
-            <h2 style={{ color: '#ef4444', fontSize: 32, fontWeight: 800, margin: '16px 0 8px' }}>Keep Trying!</h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: 18, margin: '0 0 24px' }}>Accuracy: {Math.round(feedback.accuracy)}% (Need &gt;= 80%)</p>
+            <h2 style={{ color: '#ef4444', fontSize: 32, fontWeight: 800, margin: '16px 0 24px' }}>Keep Trying!</h2>
 
             <BreakdownView />
 
