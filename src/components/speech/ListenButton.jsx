@@ -13,8 +13,8 @@ function getTtsText(phrase, displayPhrase) {
   let target = phrase || displayPhrase || "";
 
   // If phrase is English but displayPhrase contains native script (non-ASCII), prefer displayPhrase
-  if (phrase && displayPhrase && /^[a-zA-Z0-9\s.,?!'\-]+$/.test(phrase.trim())) {
-    if (/[^\x00-\x7F]/.test(displayPhrase)) {
+  if (phrase && displayPhrase && /^[a-zA-Z0-9\s.,?!'-]+$/.test(phrase.trim())) {
+    if (/[^\p{ASCII}]/u.test(displayPhrase)) {
       target = displayPhrase;
     }
   }
@@ -23,7 +23,7 @@ function getTtsText(phrase, displayPhrase) {
   return cleaned || target;
 }
 
-export default function ListenButton({ phrase, displayPhrase, language, size = 44 }) {
+export default function ListenButton({ phrase, displayPhrase, language, size = 44, ariaLabel = 'pronunciation' }) {
   const [state, setState] = useState("idle"); // idle | loading | playing
   const audioRef = useRef(null);
   const blobUrlRef = useRef(null);
@@ -83,7 +83,7 @@ export default function ListenButton({ phrase, displayPhrase, language, size = 4
     <button
       onClick={play}
       disabled={state === "loading"}
-      aria-label={label}
+      aria-label={`${label} ${ariaLabel}`}
       title={label}
       style={{
         width: size,
