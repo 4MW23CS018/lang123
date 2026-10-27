@@ -3,9 +3,12 @@ import os
 import re
 from collections import Counter
 
-# Load Whisper 'base' model locally (configured with multi-threading for speed)
-cpu_threads = 2 # max(1, (os.cpu_count() or 4) // 2)
-print(f"[WHISPER] Loading local Whisper model 'base' with {cpu_threads} CPU threads...")
+# Load Whisper model locally.
+# The 'small' model provides reliable multilingual/Indic phonetic modeling,
+# whereas 'base' frequently collapses into numeric or repetition hallucinations on Kannada.
+cpu_threads = max(1, (os.cpu_count() or 4) // 2)
+MODEL_NAME = os.environ.get("WHISPER_MODEL", "small")
+print(f"[WHISPER] Loading local Whisper model '{MODEL_NAME}' with {cpu_threads} CPU threads...")
 try:
     model = WhisperModel(MODEL_NAME, device="cpu", compute_type="int8", cpu_threads=cpu_threads)
     print(f"[WHISPER] Local model '{MODEL_NAME}' loaded successfully!")
