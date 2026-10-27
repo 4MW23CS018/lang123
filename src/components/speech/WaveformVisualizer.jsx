@@ -1,18 +1,30 @@
+// src/components/speech/WaveformVisualizer.jsx
 export default function WaveformVisualizer({ isRecording }) {
   if (!isRecording) return null;
-  
+
+  const bars = [3, 5, 8, 6, 9, 7, 4, 8, 5, 3, 6, 9, 5, 7, 4];
+
   return (
-    <div className="flex items-center justify-center gap-1 h-8 mt-2">
-      {[1, 2, 3, 4, 5, 4, 3, 2, 1].map((val, i) => (
-        <div 
-          key={i} 
-          className="bg-indigo-500 w-1 rounded-full animate-pulse"
-          style={{ 
-            height: `${val * 20}%`,
-            animationDelay: `${i * 0.1}s` 
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px', height: '32px' }}>
+      {bars.map((h, i) => (
+        <div
+          key={i}
+          style={{
+            width: '3px',
+            height: `${h * 3}px`,
+            borderRadius: '999px',
+            background: '#ef4444',
+            animation: `wavebar 0.8s ease-in-out infinite alternate`,
+            animationDelay: `${i * 0.06}s`,
           }}
         />
       ))}
+      <style>{`
+        @keyframes wavebar {
+          from { transform: scaleY(0.3); opacity: 0.5; }
+          to   { transform: scaleY(1);   opacity: 1; }
+        }
+      `}</style>
     </div>
   );
 }

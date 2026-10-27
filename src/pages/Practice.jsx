@@ -1,32 +1,70 @@
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import SpeechRecorder from "../components/speech/SpeechRecorder";
+import { useState } from "react";
 
 export default function Practice() {
   const { id } = useParams();
   const userId = localStorage.getItem("userId");
   const lesson = useQuery(api.lessons.getById, { id });
+  
+  // 0 to 100
+  const [progress, setProgress] = useState(0);
 
   if (!lesson || !userId) return (
     <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#6b7280' }}>Loading practice session...</p>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ width: 36, height: 36, border: '2.5px solid var(--border-subtle)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
+        <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading practice…</p>
+      </div>
     </div>
   );
 
   return (
-    <div style={{ padding: '32px', maxWidth: '680px', margin: '0 auto' }}>
-      <span style={{ display: 'inline-block', background: 'rgba(46,204,113,0.12)', border: '1px solid rgba(46,204,113,0.25)', borderRadius: '999px', padding: '4px 14px', fontSize: '12px', color: '#2ecc71', fontWeight: '600', marginBottom: '16px' }}>
-        {lesson.language}
-      </span>
-      <h1 style={{ fontSize: '28px', fontWeight: '800', color: '#fff', margin: '0 0 6px', letterSpacing: '-0.5px' }}>Practice: {lesson.title}</h1>
-      <p style={{ color: '#9ca3af', fontSize: '14px', margin: '0 0 28px' }}>Listen, repeat, and get scored on your pronunciation.</p>
-      <div style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', padding: '36px', position: 'relative', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }}>
-        <div style={{ position: 'absolute', top: '-50px', left: '-50px', width: '160px', height: '160px', background: 'rgba(46,204,113,0.1)', borderRadius: '50%', filter: 'blur(60px)', pointerEvents: 'none' }} />
-        <p style={{ fontSize: '11px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 24px', position: 'relative', zIndex: 1 }}>Pronunciation Challenge</p>
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <SpeechRecorder phrase={lesson.phrase} language={lesson.language} userId={userId} lessonId={lesson._id} />
+    <div style={{ padding: '0 24px', maxWidth: 640, margin: '0 auto', height: '100%', display: 'flex', flexDirection: 'column' }}>
+      
+      {/* Mini-game Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 24, marginBottom: 40 }}>
+        <Link to="/lessons" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: 24, fontWeight: 700, padding: 8 }}>
+          ×
+        </Link>
+        <div style={{ flex: 1, height: 16, background: 'var(--bg-elevated)', borderRadius: 99, overflow: 'hidden', border: '2px solid var(--border-subtle)' }}>
+          <div style={{ 
+            height: '100%', background: 'var(--accent)', borderRadius: 99, 
+            width: `${progress}%`, transition: 'width 0.5s var(--ease-out)',
+            position: 'relative', overflow: 'hidden'
+          }}>
+             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 100%)' }} />
+          </div>
         </div>
+      </div>
+
+      <div style={{ animation: 'fadeUp 0.4s var(--ease-out) both', marginBottom: 20 }}>
+        <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 8px', letterSpacing: '-0.5px' }}>
+          Translate this sentence
+        </h1>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 15, margin: 0 }}>
+          Listen, repeat, and get scored on your pronunciation.
+        </p>
+      </div>
+
+      <div className="glass-panel" style={{
+        padding: '32px 28px',
+        animation: 'fadeUp 0.45s var(--ease-out) 100ms both',
+        flex: 1, display: 'flex', flexDirection: 'column'
+      }}>
+        <SpeechRecorder 
+          phrase={lesson.phrase} 
+          displayPhrase={lesson.displayPhrase} 
+          language={lesson.language} 
+          userId={userId} 
+          lessonId={lesson._id} 
+          phonetics={lesson.phonetics} 
+          onComplete={(success) => {
+            if (success) setProgress(100);
+          }}
+        />
       </div>
     </div>
   );

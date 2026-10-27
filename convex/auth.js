@@ -41,6 +41,12 @@ export const signup = mutation({
       name: args.name,
       passwordHash,
       xp: 0,
+      totalXp: 0,
+      streak: 0,
+      dailyGoal: 50,
+      dailyXp: 0,
+      gems: 0,
+      streakFreezes: 0,
       onboardingCompleted: false,
     });
 

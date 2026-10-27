@@ -1,4 +1,4 @@
-import { query } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
 export const get = query({
@@ -8,9 +8,24 @@ export const get = query({
 
 export const getLeaderboard = query({
   handler: async (ctx) => {
-    return await ctx.db
+    const users = await ctx.db
       .query("users")
-      .order("desc") // We'd ideally index by totalXp, but keeping it simple
-      .take(10);
+      .take(50); // it takes randomly 50 members 
+    // Sort by totalXp descending (no index available, so sort in JS)
+    users.sort((a, b) => (b.totalXp || b.xp || 0) - (a.totalXp || a.xp || 0)); // sorts those 50 members 
+    return users.slice(0, 10);
   },
 });
+
+export const updateDailyGoal = mutation({
+  args: {
+    userId: v.id("users"),
+    dailyGoal: v.number(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.userId, {
+      dailyGoal: args.dailyGoal,
+    });
+  },
+});
+

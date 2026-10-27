@@ -1,4 +1,20 @@
-faster-whisper
+# Web server
 flask
 flask-cors
+
+# Text-to-speech
+gTTS
+
+# HTTP requests
 requests
+
+# Gemini AI (transcription + AI tips)
+google-genai
+
+# Environment variables
+python-dotenv
+
+# Audio preprocessing & transliteration
+soundfile
+noisereduce
+indic-transliteration
