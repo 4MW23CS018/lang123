@@ -122,6 +122,45 @@ export default function Roleplay() {
         <p style={{ color: 'var(--text-muted)' }}>Immerse yourself in real-world conversational scenarios.</p>
       </div>
 
+      {/* Visual Novel Banner */}
+      <Link 
+        to="/roleplay/game"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '16px 20px',
+          background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(244, 63, 94, 0.1) 100%)',
+          border: '1.5px solid var(--purple)',
+          borderRadius: 18,
+          marginBottom: 20,
+          textDecoration: 'none',
+          color: 'var(--text-primary)',
+          transition: 'all 0.2s',
+          boxShadow: '0 4px 16px rgba(139, 92, 246, 0.1)'
+        }}
+        onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+        onMouseLeave={e => e.currentTarget.style.transform = 'none'}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--purple)', display: 'grid', placeItems: 'center', color: '#fff', fontSize: 20 }}>
+            ☕
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 10, fontWeight: 900, background: 'var(--purple)', color: '#fff', padding: '2px 8px', borderRadius: 999 }}>VISUAL NOVEL</span>
+              <strong style={{ fontSize: 15 }}>Chapter 1: A Stranger in Town</strong>
+            </div>
+            <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>
+              Interactive voice-first story at Old Town Café. Speak in Kannada to order coffee!
+            </p>
+          </div>
+        </div>
+        <div style={{ background: 'var(--purple)', color: '#fff', padding: '8px 16px', borderRadius: 12, fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+          Play Story ↗
+        </div>
+      </Link>
+
       <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 12, marginBottom: 12 }}>
         {SCENARIOS.map(scen => (
           <button 
