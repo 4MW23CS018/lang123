@@ -50,7 +50,7 @@ export default function ChatPanel({ compact = false }) {
             const flaskUrl = import.meta.env.VITE_FLASK_URL || "http://localhost:5000";
             const res = await fetch(`${flaskUrl}/transcribe`, {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: { "Content-Type": "application/json", "Bypass-Tunnel-Reminder": "true" },
               body: JSON.stringify({ audio_base64: b64, language })
             });
             const data = await res.json();

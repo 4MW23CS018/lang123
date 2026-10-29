@@ -48,7 +48,7 @@ export default function ListenButton({ phrase, displayPhrase, language, size = 4
         const flaskUrl = import.meta.env.VITE_FLASK_URL || "http://localhost:5000";
         const res = await fetch(`${flaskUrl}/tts`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "Bypass-Tunnel-Reminder": "true" },
           body: JSON.stringify({ phrase: phraseToSpeak, language }),
         });
 

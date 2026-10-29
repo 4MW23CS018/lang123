@@ -61,7 +61,7 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
 
       const flaskResponse = await fetch(`${import.meta.env.VITE_FLASK_URL || 'http://localhost:5000'}/assess`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Bypass-Tunnel-Reminder": "true" },
         body: JSON.stringify({ audio_base64: base64, phrase, phonetics, language }),
       });
 

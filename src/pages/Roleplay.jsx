@@ -40,7 +40,7 @@ export default function Roleplay() {
     try {
       const res = await fetch(`${flaskUrl}/tts`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Bypass-Tunnel-Reminder": "true" },
         body: JSON.stringify({ phrase: text, language })
       });
       const blob = await res.blob();
@@ -70,7 +70,7 @@ export default function Roleplay() {
             // 1. Transcribe the user's voice
             const res = await fetch(`${flaskUrl}/transcribe`, {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: { "Content-Type": "application/json", "Bypass-Tunnel-Reminder": "true" },
               body: JSON.stringify({ audio_base64: b64, language }) 
             });
             const data = await res.json();
