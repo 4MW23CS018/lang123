@@ -1,6 +1,10 @@
 # Web server
 flask
 flask-cors
+gunicorn
+
+# Speech transcription
+faster-whisper
 
 # Text-to-speech
 gTTS
