@@ -45,7 +45,8 @@ export default function ListenButton({ phrase, displayPhrase, language, size = 4
     try {
       // If we already fetched this phrase, reuse the cached blob URL
       if (!blobUrlRef.current || cachedPhraseRef.current !== phraseToSpeak) {
-        const res = await fetch("http://localhost:5000/tts", {
+        const flaskUrl = import.meta.env.VITE_FLASK_URL || "http://localhost:5000";
+        const res = await fetch(`${flaskUrl}/tts`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ phrase: phraseToSpeak, language }),

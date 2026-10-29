@@ -4,7 +4,7 @@
  * and gTTS / SpeechSynthesis fallback.
  */
 
-const FLASK_BASE_URL = "http://localhost:5000";
+const FLASK_BASE_URL = import.meta.env.VITE_FLASK_URL || "http://localhost:5000";
 
 /**
  * Clean text to remove parenthetical English translations before sending to TTS.

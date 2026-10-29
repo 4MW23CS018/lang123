@@ -34,9 +34,11 @@ export default function Roleplay() {
     if (userId) await clearHistory({ userId, scenarioId: activeScenario.id });
   };
 
+  const flaskUrl = import.meta.env.VITE_FLASK_URL || "http://localhost:5000";
+
   const playTTS = async (text) => {
     try {
-      const res = await fetch("http://localhost:5000/tts", {
+      const res = await fetch(`${flaskUrl}/tts`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phrase: text, language })
@@ -66,7 +68,7 @@ export default function Roleplay() {
           const b64 = reader.result.split(',')[1];
           try {
             // 1. Transcribe the user's voice
-            const res = await fetch("http://localhost:5000/transcribe", {
+            const res = await fetch(`${flaskUrl}/transcribe`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ audio_base64: b64, language }) 

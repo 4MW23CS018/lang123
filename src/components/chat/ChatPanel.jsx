@@ -47,7 +47,8 @@ export default function ChatPanel({ compact = false }) {
           const b64 = reader.result.split(',')[1];
           setIsTranscribing(true);
           try {
-            const res = await fetch("http://localhost:5000/transcribe", {
+            const flaskUrl = import.meta.env.VITE_FLASK_URL || "http://localhost:5000";
+            const res = await fetch(`${flaskUrl}/transcribe`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ audio_base64: b64, language })
