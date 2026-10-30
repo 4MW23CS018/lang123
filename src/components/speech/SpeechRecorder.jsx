@@ -1,5 +1,6 @@
 // src/components/speech/SpeechRecorder.jsx
 import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import PronunciationFeedback from "./PronunciationFeedback";
@@ -8,6 +9,7 @@ import ListenButton from "./ListenButton";
 import Confetti from "react-confetti";
 
 export default function SpeechRecorder({ phrase, displayPhrase, language, userId, lessonId, phonetics, onComplete }) {
+  const navigate = useNavigate();
   const [recording, setRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
   const [feedback, setFeedback] = useState(null);
@@ -198,7 +200,7 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
             <button
               onClick={() => {
                 if (onComplete) onComplete(true);
-                window.location.href = '/lessons';
+                navigate('/lessons');
               }}
               style={{
                 background: '#22c55e', color: '#fff', border: 'none', borderRadius: 16,

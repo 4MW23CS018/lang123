@@ -117,6 +117,7 @@ function CustomLessonRow({ lesson, index, color }) {
 }
 
 export default function Lessons() {
+  const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
   const { current, language } = useLanguage();
   
