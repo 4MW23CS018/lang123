@@ -1,10 +1,11 @@
+import { getFlaskUrl } from "../lib/flaskConfig";
 /**
  * audioService.js
  * Browser MediaRecorder integration with Flask Faster-Whisper endpoint (localhost:5000)
  * and gTTS / SpeechSynthesis fallback.
  */
 
-const FLASK_BASE_URL = import.meta.env.VITE_FLASK_URL || "http://localhost:5000";
+const FLASK_BASE_URL = getFlaskUrl();
 
 /**
  * Clean text to remove parenthetical English translations before sending to TTS.

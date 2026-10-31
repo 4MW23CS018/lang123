@@ -1,3 +1,4 @@
+import { getFlaskUrl } from "../lib/flaskConfig";
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useAction, useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
@@ -34,7 +35,7 @@ export default function Roleplay() {
     if (userId) await clearHistory({ userId, scenarioId: activeScenario.id });
   };
 
-  const flaskUrl = import.meta.env.VITE_FLASK_URL || "http://localhost:5000";
+  const flaskUrl = getFlaskUrl();
 
   const playTTS = async (text) => {
     try {

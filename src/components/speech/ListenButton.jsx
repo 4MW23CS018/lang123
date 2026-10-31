@@ -1,3 +1,4 @@
+import { getFlaskUrl } from "../../lib/flaskConfig";
 import { useState, useRef, useCallback } from "react";
 
 /**
@@ -45,7 +46,7 @@ export default function ListenButton({ phrase, displayPhrase, language, size = 4
     try {
       // If we already fetched this phrase, reuse the cached blob URL
       if (!blobUrlRef.current || cachedPhraseRef.current !== phraseToSpeak) {
-        const flaskUrl = import.meta.env.VITE_FLASK_URL || "http://localhost:5000";
+        const flaskUrl = getFlaskUrl();
         const res = await fetch(`${flaskUrl}/tts`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "Bypass-Tunnel-Reminder": "true" },
