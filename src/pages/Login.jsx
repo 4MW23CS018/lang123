@@ -13,24 +13,37 @@ export default function Login() {
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); setError(''); setLoading(true);
-    try { const userId = await login({ name, password }); localStorage.setItem('userId', userId); navigate('/dashboard'); }
-    catch (err) {
-      if (err.message?.includes('User not found')) {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      const userId = await login({ name, password });
+      localStorage.setItem('userId', userId);
+      navigate('/dashboard');
+    } catch (err) {
+      const msg = err.message || '';
+      if (msg.includes('No account found') || msg.includes('User not found')) {
         setError('No account found with that username.');
-      }   
-      
-      else {
+      } else if (msg.includes('Invalid password')) {
         setError('Invalid password. Please try again.');
-  }
-}
-    finally { setLoading(false); }
+      } else {
+        setError(msg || 'Login failed. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const inputStyle = (field) => ({
-    width: '100%', padding: '13px 16px', boxSizing: 'border-box',
-    background: 'var(--bg-input)', border: `1.5px solid ${focused === field ? 'var(--accent)' : 'var(--border-default)'}`,
-    borderRadius: 12, color: 'var(--text-primary)', fontSize: 15, outline: 'none',
+    width: '100%',
+    padding: '13px 16px',
+    boxSizing: 'border-box',
+    background: 'var(--bg-input)',
+    border: `1.5px solid ${focused === field ? 'var(--accent)' : 'var(--border-default)'}`,
+    borderRadius: 12,
+    color: 'var(--text-primary)',
+    fontSize: 15,
+    outline: 'none',
     transition: 'border-color 0.2s, box-shadow 0.2s',
     boxShadow: focused === field ? '0 0 0 3px rgba(34,197,94,0.1)' : 'none',
   });
