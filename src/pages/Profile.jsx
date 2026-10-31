@@ -1,4 +1,4 @@
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -62,7 +62,16 @@ export default function Profile() {
   const [xpVis, setXpVis] = useState(false);
   useEffect(() => { const t = setTimeout(() => setXpVis(true), 700); return () => clearTimeout(t); }, []);
 
-  const handleLogout = () => { localStorage.removeItem("userId"); navigate("/"); };
+  const logoutMutation = useMutation(api.auth.logout);
+  const handleLogout = async () => {
+    const sessionToken = localStorage.getItem("sessionToken");
+    if (sessionToken) {
+      try { await logoutMutation({ sessionToken }); } catch (_) {}
+    }
+    localStorage.removeItem("userId");
+    localStorage.removeItem("sessionToken");
+    navigate("/");
+  };
 
   if (!user) return (
     <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

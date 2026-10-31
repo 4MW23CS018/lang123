@@ -61,8 +61,11 @@ export default function Signup() {
     setLoading(true);
 
     try {
-      const userId = await verifySignupOtp({ email, code: otp.trim() });
-      localStorage.setItem('userId', userId);
+      const res = await verifySignupOtp({ email, code: otp.trim() });
+      const uId = typeof res === 'object' ? res.userId : res;
+      const sToken = typeof res === 'object' ? res.sessionToken : null;
+      localStorage.setItem('userId', uId);
+      if (sToken) localStorage.setItem('sessionToken', sToken);
       navigate('/onboarding');
     } catch (err) {
       setError(err.message || 'Verification failed. Please check the code.');

@@ -6,7 +6,7 @@ export default defineSchema({
     name: v.string(),
     email: v.optional(v.string()),
     emailVerified: v.optional(v.boolean()),
-    passwordHash: v.optional(v.string()),       // optional now
+    passwordHash: v.optional(v.string()),       // Supports PBKDF2 with automatic legacy migration
     xp: v.number(),
     totalXp: v.optional(v.number()),        // Default: 0
     streak: v.optional(v.number()),         // Default: 0
@@ -25,13 +25,26 @@ export default defineSchema({
     .index("by_email", ["email"])
     .index("by_name", ["name"]),
 
+  // Server-verified authentication sessions
+  sessions: defineTable({
+    userId: v.id("users"),
+    sessionTokenHash: v.string(),
+    expiresAt: v.number(),
+    createdAt: v.number(),
+    lastActiveAt: v.number(),
+  }).index("by_tokenHash", ["sessionTokenHash"])
+    .index("by_userId", ["userId"]),
+
+  // Cryptographically secured OTP codes with HMAC & strict type union
   otpCodes: defineTable({
     email: v.string(),
     codeHash: v.string(),
-    type: v.string(), // "signup" | "reset_password"
+    type: v.union(v.literal("signup"), v.literal("reset_password")),
     expiresAt: v.number(),
     attempts: v.number(),
     lastSentAt: v.number(),
+    sendCount: v.number(),
+    windowStart: v.number(),
   }).index("by_email_type", ["email", "type"]),
 
   lessons: defineTable({
@@ -90,4 +103,4 @@ export default defineSchema({
     assistantMessage: v.string(),
     timestamp: v.number(),
   }).index("by_user_scenario", ["userId", "scenarioId"]),
-}); 
+});

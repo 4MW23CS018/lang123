@@ -37,8 +37,11 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const userId = await login({ emailOrUsername, password });
-      localStorage.setItem('userId', userId);
+      const res = await login({ emailOrUsername, password });
+      const uId = typeof res === 'object' ? res.userId : res;
+      const sToken = typeof res === 'object' ? res.sessionToken : null;
+      localStorage.setItem('userId', uId);
+      if (sToken) localStorage.setItem('sessionToken', sToken);
       navigate('/dashboard');
     } catch (err) {
       const msg = err.message || '';
@@ -97,12 +100,15 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const userId = await resetPasswordWithOtp({
+      const res = await resetPasswordWithOtp({
         email: resetEmail,
         code: resetOtp.trim(),
         newPassword,
       });
-      localStorage.setItem('userId', userId);
+      const uId = typeof res === 'object' ? res.userId : res;
+      const sToken = typeof res === 'object' ? res.sessionToken : null;
+      localStorage.setItem('userId', uId);
+      if (sToken) localStorage.setItem('sessionToken', sToken);
       navigate('/dashboard');
     } catch (err) {
       setError(err.message || 'Password reset failed. Please check the code.');

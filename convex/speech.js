@@ -1,6 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
+import { assertAuthorized } from "./auth";
 
 export const generateUploadUrl = mutation({
   handler: async (ctx) => {
@@ -18,14 +19,19 @@ export const getAudioUrl = query({
 export const saveAssessment = mutation({
   args: {
     userId: v.id("users"),
+    sessionToken: v.optional(v.string()),
     lessonId: v.id("lessons"),
     transcription: v.string(),
     accuracy: v.number(),
     audioStorageId: v.string(),
   },
   handler: async (ctx, args) => {
+    if (args.sessionToken) {
+      await assertAuthorized(ctx, args.sessionToken, args.userId);
+    }
+
     const xpEarned = Math.round(args.accuracy * 0.2);
-    
+
     await ctx.db.insert("assessments", {
       userId: args.userId,
       lessonId: args.lessonId,

@@ -6,9 +6,22 @@ import { api } from '../../convex/_generated/api';
 export default function ProtectedRoute({ children }) {
   const location = useLocation();
   const userId = localStorage.getItem('userId');
-  const user = useQuery(api.users.get, userId ? { userId } : 'skip');
+  const sessionToken = localStorage.getItem('sessionToken');
 
-  if (!userId) return <Navigate to="/login" state={{ from: location }} replace />;
+  // Server-verified identity check via sessionToken
+  const user = useQuery(
+    api.users.get,
+    sessionToken
+      ? { sessionToken, userId: userId || undefined }
+      : userId
+      ? { userId }
+      : 'skip'
+  );
+
+  if (!userId && !sessionToken) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
   if (user === undefined) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -17,9 +30,10 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-  // If user does not exist in DB (e.g. deleted or invalid session)
+  // If session is invalid, revoked (e.g. after password reset), or expired
   if (!user) {
     localStorage.removeItem('userId');
+    localStorage.removeItem('sessionToken');
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
