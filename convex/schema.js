@@ -4,6 +4,8 @@ import { v } from "convex/values";
 export default defineSchema({
   users: defineTable({
     name: v.string(),
+    email: v.optional(v.string()),
+    emailVerified: v.optional(v.boolean()),
     passwordHash: v.optional(v.string()),       // optional now
     xp: v.number(),
     totalXp: v.optional(v.number()),        // Default: 0
@@ -19,7 +21,18 @@ export default defineSchema({
     streakFreezes: v.optional(v.number()),  // Default: 0
     equippedBorder: v.optional(v.string()), // ID of the animated border
     unlockedBorders: v.optional(v.array(v.string())), // Array of border IDs owned
-  }).index("by_totalXp", ["totalXp"]),
+  }).index("by_totalXp", ["totalXp"])
+    .index("by_email", ["email"])
+    .index("by_name", ["name"]),
+
+  otpCodes: defineTable({
+    email: v.string(),
+    codeHash: v.string(),
+    type: v.string(), // "signup" | "reset_password"
+    expiresAt: v.number(),
+    attempts: v.number(),
+    lastSentAt: v.number(),
+  }).index("by_email_type", ["email", "type"]),
 
   lessons: defineTable({
     title: v.string(),
