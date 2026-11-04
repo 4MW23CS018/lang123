@@ -11,3 +11,4 @@ export function getFlaskUrl() {
   }
   return (import.meta.env.VITE_FLASK_URL || DEFAULT_FLASK_URL).trim().replace(/\/$/, "");
 }
+

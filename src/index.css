@@ -851,3 +851,233 @@ select {
   outline: 3px solid var(--sky, #0ea5e9);
   outline-offset: 3px;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   Profile Animated Banners & Avatar Frames
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Base Banner */
+.profile-banner-base {
+  position: relative;
+  width: 100%;
+  height: 160px;
+  border-radius: 20px 20px 0 0;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+/* 1. Default Banner: Midnight Twilight */
+.banner-default {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #0f172a 100%);
+  position: relative;
+}
+.banner-default::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 70% 30%, rgba(139, 92, 246, 0.35) 0%, transparent 60%);
+  animation: bannerBreathing 6s infinite alternate ease-in-out;
+}
+@keyframes bannerBreathing {
+  0% { opacity: 0.4; transform: scale(1); }
+  100% { opacity: 0.9; transform: scale(1.15); }
+}
+
+/* 2. Synthwave Cyber Grid (Animated Retro) */
+.banner-synthwave {
+  background: linear-gradient(to bottom, #11052c 0%, #38006b 60%, #ff007f 100%);
+  position: relative;
+}
+.banner-synthwave::before {
+  content: "";
+  position: absolute;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: linear-gradient(to bottom, #fde047 0%, #ff007f 80%);
+  box-shadow: 0 0 40px #ff007f, 0 0 80px #f43f5e;
+  animation: sunGlow 3s infinite alternate ease-in-out;
+}
+.banner-synthwave::after {
+  content: "";
+  position: absolute;
+  inset: 50% 0 0 0;
+  background:
+    linear-gradient(to bottom, transparent, rgba(17, 5, 44, 0.8)),
+    repeating-linear-gradient(90deg, rgba(255, 0, 127, 0.4) 0px, rgba(255, 0, 127, 0.4) 1px, transparent 1px, transparent 24px),
+    repeating-linear-gradient(0deg, rgba(0, 255, 255, 0.4) 0px, rgba(0, 255, 255, 0.4) 1px, transparent 1px, transparent 12px);
+  transform: perspective(150px) rotateX(45deg);
+  transform-origin: bottom center;
+  animation: gridScroll 10s linear infinite;
+}
+@keyframes sunGlow {
+  0% { transform: translateX(-50%) scale(0.96); filter: brightness(0.9); }
+  100% { transform: translateX(-50%) scale(1.04); filter: brightness(1.2); }
+}
+@keyframes gridScroll {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 24px; }
+}
+
+/* 3. Cosmic Nebula (Space & Drifting Stars) */
+.banner-cosmic {
+  background: #030712;
+  position: relative;
+}
+.banner-cosmic::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(circle at 20% 40%, rgba(99, 102, 241, 0.4) 0%, transparent 50%),
+    radial-gradient(circle at 80% 60%, rgba(236, 72, 153, 0.35) 0%, transparent 55%),
+    radial-gradient(circle at 50% 20%, rgba(56, 189, 248, 0.3) 0%, transparent 40%);
+  filter: blur(25px);
+  animation: cosmicDrift 8s infinite alternate ease-in-out;
+}
+.banner-cosmic::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(1.5px 1.5px at 20px 30px, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 70px 80px, #38bdf8, transparent),
+    radial-gradient(2px 2px at 150px 40px, #c084fc, transparent),
+    radial-gradient(1px 1px at 220px 110px, #fff, transparent),
+    radial-gradient(2px 2px at 290px 70px, #f472b6, transparent),
+    radial-gradient(1.5px 1.5px at 360px 30px, #fff, transparent);
+  background-size: 380px 160px;
+  animation: starTwinkle 4s infinite alternate ease-in-out;
+}
+@keyframes cosmicDrift {
+  0% { transform: scale(1) rotate(0deg); }
+  100% { transform: scale(1.15) rotate(4deg); }
+}
+@keyframes starTwinkle {
+  0% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+/* 4. Inferno Blaze (Volcanic Core & Embers) */
+.banner-inferno {
+  background: linear-gradient(180deg, #1c0a00 0%, #431407 50%, #7c2d12 100%);
+  position: relative;
+}
+.banner-inferno::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 120%, rgba(249, 115, 22, 0.6) 0%, rgba(239, 68, 68, 0.3) 50%, transparent 80%);
+  animation: infernoPulse 1.8s infinite alternate ease-in-out;
+}
+.banner-inferno::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(2px 3px at 40px 120px, #fbbf24, transparent),
+    radial-gradient(2.5px 4px at 110px 140px, #ea580c, transparent),
+    radial-gradient(2px 3px at 200px 100px, #f97316, transparent),
+    radial-gradient(3px 4px at 280px 130px, #fde047, transparent),
+    radial-gradient(2px 3px at 350px 90px, #ef4444, transparent);
+  background-size: 400px 160px;
+  animation: emberRise 3s infinite linear;
+}
+@keyframes infernoPulse {
+  0% { opacity: 0.6; filter: brightness(0.9); }
+  100% { opacity: 1; filter: brightness(1.25); }
+}
+@keyframes emberRise {
+  0% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(-40px); opacity: 0.2; }
+}
+
+/* 5. Zen Garden Sakura (Dusk Petals) */
+.banner-sakura {
+  background: linear-gradient(135deg, #2e1065 0%, #701a75 50%, #831843 100%);
+  position: relative;
+}
+.banner-sakura::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 20%, rgba(244, 114, 182, 0.4) 0%, transparent 60%);
+  animation: bannerBreathing 5s infinite alternate ease-in-out;
+}
+.banner-sakura::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(3px 5px at 50px 40px, #fbcfe8, transparent),
+    radial-gradient(4px 6px at 140px 80px, #f472b6, transparent),
+    radial-gradient(3px 4px at 230px 30px, #f9a8d4, transparent),
+    radial-gradient(4px 6px at 320px 90px, #fbcfe8, transparent);
+  background-size: 360px 160px;
+  animation: sakuraDrift 7s infinite linear;
+}
+@keyframes sakuraDrift {
+  0% { transform: translate(0, 0); }
+  50% { transform: translate(20px, 15px); }
+  100% { transform: translate(0, 0); }
+}
+
+/* 6. Hampi Temple Sunburst (Heritage Gold Flare) */
+.banner-temple {
+  background: linear-gradient(145deg, #1c1917 0%, #451a03 50%, #78350f 100%);
+  position: relative;
+}
+.banner-temple::before {
+  content: "";
+  position: absolute;
+  top: -30px;
+  right: -30px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.45) 0%, rgba(217, 119, 6, 0.2) 50%, transparent 75%);
+  animation: sunGlow 4s infinite alternate ease-in-out;
+}
+.banner-temple::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.4), transparent 70%);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Avatar Frames / Borders (Gamer Ring Animations)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Default Free Frame */
+.border-default {
+  box-shadow: 0 0 0 3px var(--bg-card), 0 0 0 5px rgba(16, 185, 129, 0.35);
+}
+
+/* Mythic Amethyst */
+.border-amethyst {
+  box-shadow: 0 0 0 3px var(--bg-card), 0 0 14px #a855f7, 0 0 28px #7c3aed;
+  animation: amethystPulse 2.2s infinite alternate ease-in-out;
+}
+@keyframes amethystPulse {
+  0% { box-shadow: 0 0 0 3px var(--bg-card), 0 0 8px #a855f7, 0 0 16px #7c3aed; }
+  100% { box-shadow: 0 0 0 3px var(--bg-card), 0 0 20px #c084fc, 0 0 38px #9333ea; }
+}
+
+/* Cosmic Halo */
+.border-cosmic {
+  position: relative;
+}
+.border-cosmic::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  background: conic-gradient(from 180deg, #38bdf8, #818cf8, #c084fc, #38bdf8);
+  animation: spin 3.5s linear infinite;
+  z-index: -1;
+}

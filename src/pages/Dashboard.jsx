@@ -229,9 +229,9 @@ export default function Dashboard() {
           background: 'var(--accent-bg)', border: user.equippedBorder ? 'none' : '2px solid var(--accent-border)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 26, fontWeight: 800, color: 'var(--accent)', flexShrink: 0,
-          position: 'relative', zIndex: 1,
+          position: 'relative', zIndex: 1, overflow: 'hidden',
         }}>
-          {user.name?.[0]?.toUpperCase()}
+          {user.avatarUrl ? <img src={user.avatarUrl} alt={user.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : user.name?.[0]?.toUpperCase()}
         </div>
         <div>
           <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', margin: '0 0 4px' }}>

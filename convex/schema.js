@@ -10,6 +10,7 @@ export default defineSchema({
     xp: v.number(),
     totalXp: v.optional(v.number()),        // Default: 0
     streak: v.optional(v.number()),         // Default: 0
+    maxStreak: v.optional(v.number()),      // All-time highest streak
     lastPracticeDate: v.optional(v.number()),
     onboardingCompleted: v.optional(v.boolean()), // Default: false
     reminderTime: v.optional(v.string()),  
@@ -19,8 +20,13 @@ export default defineSchema({
     dailyXpDate: v.optional(v.string()),    // "YYYY-MM-DD" the dailyXp belongs to
     gems: v.optional(v.number()),           // Default: 0
     streakFreezes: v.optional(v.number()),  // Default: 0
-    equippedBorder: v.optional(v.string()), // ID of the animated border
+    equippedBorder: v.optional(v.string()), // ID of the animated avatar frame/border
     unlockedBorders: v.optional(v.array(v.string())), // Array of border IDs owned
+    equippedBanner: v.optional(v.string()), // ID of the animated profile banner
+    unlockedBanners: v.optional(v.array(v.string())), // Array of banner IDs owned
+    avatarStorageId: v.optional(v.string()), // Convex storageId for custom uploaded profile picture
+    avatarUrl: v.optional(v.string()),       // Direct resolved URL for profile picture
+    bestLanguage: v.optional(v.string()),    // User's featured/best language
   }).index("by_totalXp", ["totalXp"]),
 
   lessons: defineTable({

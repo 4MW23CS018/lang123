@@ -37,10 +37,14 @@ export const updateGamification = internalMutation({
     const isNewDay = storedDate !== todayStr;
     const newDailyXp = isNewDay ? args.xpEarned : (user.dailyXp || 0) + args.xpEarned;
 
+    const currentMax = user.maxStreak || 0;
+    const newMaxStreak = Math.max(currentMax, newStreak);
+
     await ctx.db.patch(args.userId, {
       xp: newXp,
       totalXp: newTotalXp,
       streak: newStreak,
+      maxStreak: newMaxStreak,
       lastPracticeDate: now,
       dailyXp: newDailyXp,
       dailyXpDate: todayStr,
@@ -59,17 +63,11 @@ export const updateGamification = internalMutation({
 
     // Check if daily goal met
     const dailyGoal = user.dailyGoal || 50;
-    const dailyGoalMet = newDailyXp >= dailyGoal;
-
-    if (dailyGoalMet && (isNewDay || (user.dailyXp || 0) < dailyGoal)) {
-      // Just crossed the goal threshold
-      await ctx.db.insert("achievements", {
-        userId: args.userId,
-        name: "Daily Goal Crushed",
-        description: `Hit your daily goal of ${dailyGoal} XP!`,
-        unlockedAt: now,
+    if ((user.dailyXp || 0) < dailyGoal && newDailyXp >= dailyGoal) {
+      // Award extra 5 gems for completing daily goal
+      await ctx.db.patch(args.userId, {
+        gems: newGems + 5,
       });
     }
   },
 });
-

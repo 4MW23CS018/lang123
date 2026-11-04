@@ -22,11 +22,11 @@ function PodiumCard({ user, rank }) {
         background: color + '18', border: user.equippedBorder ? 'none' : `2px solid ${color}50`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: isFirst ? 24 : 18, fontWeight: 800, color,
-        marginBottom: 6, transition: 'transform 0.2s', position: 'relative', zIndex: 1,
+        marginBottom: 6, transition: 'transform 0.2s', position: 'relative', zIndex: 1, overflow: 'hidden',
       }}
         onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
         onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
-        {user.name?.[0]?.toUpperCase()}
+        {user.avatarUrl ? <img src={user.avatarUrl} alt={user.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : user.name?.[0]?.toUpperCase()}
       </div>
       <span style={{ color, marginBottom: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {rank === 1 ? <Crown size={22} color="#f59e0b" /> : rank === 2 ? <Medal size={20} color="#94a3b8" /> : <Trophy size={18} color="#cd7c2f" />}
@@ -60,7 +60,7 @@ function ListRow({ user, index }) {
       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <span style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--text-faint)', background: 'var(--bg-elevated)', borderRadius: 7, flexShrink: 0 }}>{rank}</span>
-        <div className={user.equippedBorder ? user.equippedBorder.replace(/_/g, '-') : ''} style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--bg-elevated)', border: user.equippedBorder ? 'none' : '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', flexShrink: 0, position: 'relative', zIndex: 1 }}>{user.name?.[0]?.toUpperCase()}</div>
+        <div className={user.equippedBorder ? user.equippedBorder.replace(/_/g, '-') : ''} style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--bg-elevated)', border: user.equippedBorder ? 'none' : '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', flexShrink: 0, position: 'relative', zIndex: 1, overflow: 'hidden' }}>{user.avatarUrl ? <img src={user.avatarUrl} alt={user.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : user.name?.[0]?.toUpperCase()}</div>
         <span style={{ fontWeight: 600, color: 'var(--text-secondary)', fontSize: 14 }}>{user.name}</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
