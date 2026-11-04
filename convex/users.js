@@ -50,8 +50,8 @@ export const getProfileStats = query({
 export const getLeaderboard = query({
   handler: async (ctx) => {
     const users = await ctx.db
-      .query("users")
-      .take(50);
+      .query("users") 
+      .take(50); //logic
     users.sort((a, b) => (b.totalXp || b.xp || 0) - (a.totalXp || a.xp || 0));
     return users.slice(0, 10);
   },

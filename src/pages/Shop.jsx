@@ -1,8 +1,9 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useState } from "react";
-import { Gem, Snowflake, Shield, Sparkles, Check, Lock, Palette } from "lucide-react";
+import { Snowflake, Shield, Sparkles, Check, Lock, Palette, Gem } from "lucide-react";
 import { FRAMES, BANNERS } from "../lib/cosmetics";
+import shopGemIcon from "../assets/shop-gem.png";
 
 export default function Shop() {
   const userId = localStorage.getItem("userId");
@@ -64,9 +65,9 @@ export default function Shop() {
           <h1 style={{ fontSize: 36, fontWeight: 800, margin: '0 0 8px', letterSpacing: '-0.5px' }}>Cosmetics & Shop</h1>
           <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Equip animated avatar frames and profile banners!</p>
         </div>
-        <div style={{ background: 'var(--bg-elevated)', padding: '12px 24px', borderRadius: 99, border: '2px solid #0ea5e9', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Gem size={22} color="#0ea5e9" />
-          <span style={{ color: '#0ea5e9', fontWeight: 800, fontSize: 20 }}>{gems}</span>
+        <div style={{ background: 'var(--bg-elevated)', padding: '10px 22px', borderRadius: 99, border: '2px solid rgba(168, 85, 247, 0.4)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <img src={shopGemIcon} alt="Gems" style={{ width: 22, height: 22, objectFit: 'contain' }} />
+          <span style={{ color: '#c084fc', fontWeight: 800, fontSize: 20 }}>{gems}</span>
         </div>
       </div>
 
@@ -164,7 +165,7 @@ export default function Shop() {
                         }}
                       >
                         {buying === f.id ? 'Purchasing...' : (
-                          <><span>{f.price}</span> <Gem size={16} /></>
+                          <><span>{f.price}</span> <img src={shopGemIcon} alt="gems" style={{ width: 16, height: 16, objectFit: 'contain' }} /></>
                         )}
                       </button>
                     ) : (
@@ -240,7 +241,7 @@ export default function Shop() {
                           }}
                         >
                           {buying === b.id ? 'Purchasing...' : (
-                            <><span>{b.price}</span> <Gem size={16} /></>
+                            <><span>{b.price}</span> <img src={shopGemIcon} alt="gems" style={{ width: 16, height: 16, objectFit: 'contain' }} /></>
                           )}
                         </button>
                       ) : (
@@ -295,7 +296,7 @@ export default function Shop() {
             }}
           >
             {buying === 'streak_freeze' ? '...' : (
-              <><span>50</span> <Gem size={16} /></>
+              <><span>50</span> <img src={shopGemIcon} alt="gems" style={{ width: 16, height: 16, objectFit: 'contain' }} /></>
             )}
           </button>
         </div>

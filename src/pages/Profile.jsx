@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { FRAMES, BANNERS } from "../lib/cosmetics";
 import { SOUTH_INDIAN_LANGUAGES, useLanguage } from "../components/hooks/useLanguage";
+import shopGemIcon from "../assets/shop-gem.png";
 
 function getLevel(xp) { return Math.floor(Math.sqrt(xp / 100)) + 1; }
 function xpForLevel(lvl) { return Math.pow(lvl - 1, 2) * 100; }
@@ -290,15 +291,15 @@ export default function Profile() {
               onClick={() => navigate('/shop')}
               style={{
                 display: 'flex', alignItems: 'center', gap: 6,
-                padding: '6px 14px', borderRadius: 99,
-                background: 'rgba(14, 165, 233, 0.12)', border: '1px solid rgba(14, 165, 233, 0.35)',
-                color: '#38bdf8', fontSize: 13, fontWeight: 800, cursor: 'pointer',
+                padding: '5px 14px', borderRadius: 99,
+                background: 'rgba(168, 85, 247, 0.12)', border: '1px solid rgba(168, 85, 247, 0.35)',
+                color: '#c084fc', fontSize: 13, fontWeight: 800, cursor: 'pointer',
                 transition: 'all 0.2s'
               }}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(14, 165, 233, 0.25)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'rgba(14, 165, 233, 0.12)'}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(168, 85, 247, 0.25)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'rgba(168, 85, 247, 0.12)'}
             >
-              <Gem size={15} />
+              <img src={shopGemIcon} alt="Gems" style={{ width: 16, height: 16, objectFit: 'contain' }} />
               <span>{user.gems || 0} Gems</span>
               <ChevronRight size={13} opacity={0.7} />
             </div>

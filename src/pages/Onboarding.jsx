@@ -146,7 +146,7 @@ export default function Onboarding() {
           <div style={{ fontSize: 56, marginBottom: 14, animation: 'float 3s ease-in-out infinite' }}>🎉</div>
           <h2 style={{ color: 'var(--text-primary)', fontSize: 24, fontWeight: 800, margin: '0 0 8px' }}>You're all set!</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: 15, margin: '0 0 24px' }}>Your personalized plan is ready.</p>
-          <button style={btnStyle} onClick={goNext} onMouseEnter={hoverIn} onMouseLeave={hoverOut}>Go to Dashboard →</button>
+          <button style={btnStyle} onClick={goNext} onMouseEnter={hoverIn} onMouseLeave={hoverOut}>Go to Home →</button>
         </div>
       </>;
       default: return null;

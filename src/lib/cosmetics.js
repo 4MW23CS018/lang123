@@ -115,3 +115,4 @@ export const BANNERS = [
     accentColor: "#ea580c",
   },
 ];
+
