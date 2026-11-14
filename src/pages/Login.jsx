@@ -19,6 +19,7 @@ export default function Login() {
     try {
       const userId = await login({ name, password });
       localStorage.setItem('userId', userId);
+      localStorage.setItem('userName', name);
       navigate('/dashboard');
     } catch (err) {
       const msg = err.message || '';

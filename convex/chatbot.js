@@ -120,24 +120,28 @@ Rules: Always give native script + phonetics (hyphenated syllables) + English. U
       return response.text || "I'm sorry, I couldn't generate a response. Please try again.";
     };
 
-    try {
-      console.log("[EnZo] Calling gemini-3.8-flash for", args.language);
-      assistantReply = await callGemini("gemini-3.8-flash");
-    } catch (err) {
-      const status = err?.status || err?.code || "unknown";
-      console.error(`[EnZo] gemini-3.8-flash failed (${status}):`, err?.message || String(err));
+    const candidateModels = ["gemini-3.5-flash-lite", "gemini-2.5-flash", "gemini-3.8-flash"];
+    let lastError = null;
 
-      // Fallback: gemini-3.5-flash-lite
+    for (const modelName of candidateModels) {
       try {
-        console.log("[EnZo] Falling back to gemini-3.5-flash-lite...");
-        await new Promise((r) => setTimeout(r, 1000));
-        assistantReply = await callGemini("gemini-3.5-flash-lite");
-        console.log("[EnZo] Fallback to gemini-3.5-flash-lite succeeded for", args.language);
-      } catch (retryErr) {
-        const retryStatus = retryErr?.status || retryErr?.code || "unknown";
-        console.error(`[EnZo] Fallback also failed (${retryStatus}):`, retryErr?.message || String(retryErr));
-        assistantReply = "I'm a bit overloaded right now! Please wait about a minute and try again. 💤";
+        console.log(`[EnZo] Generating response using dedicated model: ${modelName} for ${args.language}`);
+        assistantReply = await callGemini(modelName);
+        if (assistantReply && assistantReply.trim()) {
+          lastError = null;
+          break;
+        }
+      } catch (err) {
+        lastError = err;
+        const status = err?.status || err?.code || "unknown";
+        console.warn(`[EnZo] ${modelName} unavailable (${status}): ${err?.message || String(err)}. Trying next model in cascade...`);
+        await new Promise((r) => setTimeout(r, 600));
       }
+    }
+
+    if (!assistantReply) {
+      console.error("[EnZo] All candidate models in cascade failed:", lastError);
+      assistantReply = "I'm a bit overloaded right now! Please wait a moment and try asking again. 💤";
     }
 
     // ── 4. STORE — persist both messages ─────────────────────

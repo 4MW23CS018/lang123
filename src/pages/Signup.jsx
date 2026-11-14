@@ -14,7 +14,7 @@ export default function Signup() {
 
   const handleSubmit = async (e) => {
     e.preventDefault(); setError(''); setLoading(true);
-    try { const userId = await signup({ name, password }); localStorage.setItem('userId', userId); navigate('/onboarding'); }
+    try { const userId = await signup({ name, password }); localStorage.setItem('userId', userId); localStorage.setItem('userName', name); navigate('/onboarding'); }
     catch (err) { setError(err.message); }
     finally { setLoading(false); }
   };

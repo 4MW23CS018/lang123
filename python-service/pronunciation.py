@@ -221,7 +221,7 @@ Mistakes: {mistakes_str}
 
 Give a 1-sentence tip encouraging them and explaining clearly what they said vs what was missed (e.g. if they only said part of the word/phrase). Be direct, concise, and friendly."""
 
-    for model_name in ['gemini-3.5-flash-lite', 'gemini-3.8-flash']:
+    for model_name in ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-3.5-flash-lite']:
         try:
             response = client.models.generate_content(
                 model=model_name,

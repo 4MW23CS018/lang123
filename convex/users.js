@@ -2,9 +2,19 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
 export const get = query({
-  args: { userId: v.id("users") },
+  args: {
+    userId: v.optional(v.union(v.id("users"), v.string())),
+    id: v.optional(v.union(v.id("users"), v.string())),
+  },
   handler: async (ctx, args) => {
-    const user = await ctx.db.get(args.userId);
+    const rawId = args.userId || args.id;
+    if (!rawId) return null;
+    let normalized = null;
+    try {
+      normalized = ctx.db.normalizeId("users", rawId);
+    } catch (_) {}
+    if (!normalized) return null;
+    const user = await ctx.db.get(normalized);
     if (!user) return null;
 
     let avatarUrl = user.avatarUrl || null;

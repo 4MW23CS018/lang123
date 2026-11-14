@@ -41,8 +41,19 @@ export default defineSchema({
     order: v.optional(v.number()),      // Path ordering
     unit: v.optional(v.number()),       // Unit grouping
     topic: v.optional(v.string()),      // Name of the unit
+    // Hierarchical Branching Phrase Tree fields:
+    nodeKey: v.optional(v.string()),    // Unique stable phrase identifier (e.g. kn_greet_root_01)
+    parentKey: v.optional(v.string()),  // Parent phrase key (null/undefined for root phrases)
+    parentId: v.optional(v.id("lessons")), // Direct DB parent reference if linked
+    categoryId: v.optional(v.string()), // Category ID (e.g. "greetings", "food", etc.)
+    level: v.optional(v.number()),      // 0 = root, 1 = branch response, 2 = follow-up, 3 = nuance
+    meaning: v.optional(v.string()),    // English translation/meaning
+    context: v.optional(v.string()),    // Contextual usage and explanation
+    contentReviewStatus: v.optional(v.string()), // "verified" | "awaiting_review"
   }).index("by_language", ["language"])
-    .index("by_language_order", ["language", "order"]),
+    .index("by_language_order", ["language", "order"])
+    .index("by_language_category", ["language", "categoryId"])
+    .index("by_nodeKey", ["nodeKey"]),
 
   assessments: defineTable({
     userId: v.id("users"),
