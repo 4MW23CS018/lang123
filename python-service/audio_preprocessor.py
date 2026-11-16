@@ -71,19 +71,40 @@ def preprocess(input_path, output_path=None):
 
         try:
             res = subprocess.run(ffmpeg_cmd, capture_output=True, text=True)
-            if res.returncode != 0:
-                print(f"[PREPROCESS] ffmpeg conversion failed with code {res.returncode}: {res.stderr}")
-                source_path = input_path
         except Exception as e:
-            print(f"[PREPROCESS] ffmpeg execution failed: {e}, using raw file")
-            source_path = input_path
+            raise AudioPreprocessingError(
+                f"FFmpeg execution failed: {e}"
+            ) from e
+
+        if res.returncode != 0:
+            diagnostic = res.stderr.strip() or "no FFmpeg diagnostic was provided"
+            raise AudioPreprocessingError(
+                f"FFmpeg conversion failed with code {res.returncode}: {diagnostic}"
+            )
+
+        try:
+            converted_size = os.path.getsize(converted_path)
+        except OSError as e:
+            raise AudioPreprocessingError(
+                f"FFmpeg did not create a readable output file: {e}"
+            ) from e
+
+        if converted_size == 0:
+            raise AudioPreprocessingError("FFmpeg produced an empty output file")
 
         # Step 2: Load as numpy array
         try:
             samples, sr = sf.read(source_path, dtype='float32')
         except Exception as e:
-            print(f"[PREPROCESS] Failed to read converted audio: {e}")
-            raise AudioPreprocessingError("Audio could not be decoded") from e
+            raise AudioPreprocessingError(
+                f"Converted audio could not be read: {e}"
+            ) from e
+
+        if sr != TARGET_SAMPLE_RATE:
+            raise AudioPreprocessingError(
+                f"Converted audio has unexpected sample rate {sr} Hz; "
+                f"expected {TARGET_SAMPLE_RATE} Hz"
+            )
 
         # Ensure mono
         if samples.ndim > 1:
