@@ -6,7 +6,7 @@ from collections import Counter
 # Load Whisper model locally.
 # The 'small' model provides reliable multilingual/Indic phonetic modeling,
 # whereas 'base' frequently collapses into numeric or repetition hallucinations on Kannada.
-cpu_threads = max(1, (os.cpu_count() or 4) // 2)
+cpu_threads = 2 #max(1, (os.cpu_count() or 4) // 2)
 MODEL_NAME = os.environ.get("WHISPER_MODEL", "small")
 print(f"[WHISPER] Loading local Whisper model '{MODEL_NAME}' with {cpu_threads} CPU threads...")
 try:

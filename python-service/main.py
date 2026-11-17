@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import base64
+import binascii
 import os
 import io
 import tempfile
@@ -9,7 +10,62 @@ from transcription import transcribe
 from pronunciation import assess
 
 app = Flask(__name__)
-CORS(app)
+
+APP_ENV = os.getenv("APP_ENV", "development").strip().lower()
+
+if APP_ENV not in ("development", "production"):
+    raise RuntimeError(
+        "APP_ENV must be either 'development' or 'production'"
+    )
+# to use less audio file size , max size 14 MB defined  
+try:
+    MAX_REQUEST_BYTES = int(
+        os.getenv("MAX_REQUEST_BYTES", str(14 * 1024 * 1024))
+    )
+except ValueError as error:
+    raise RuntimeError(
+        "MAX_REQUEST_BYTES must be a positive integer"
+    ) from error
+
+if MAX_REQUEST_BYTES <= 0:
+    raise RuntimeError(
+        "MAX_REQUEST_BYTES must be a positive integer"
+    )
+
+app.config["MAX_CONTENT_LENGTH"] = MAX_REQUEST_BYTES
+
+configured_origins = os.getenv("CORS_ALLOWED_ORIGINS", "")
+
+if APP_ENV == "production" and not configured_origins.strip():
+    raise RuntimeError(
+        "CORS_ALLOWED_ORIGINS must be configured in production"
+    )
+    # Default local development URLs for Vite/React
+allowed_origins = [
+    origin.strip().rstrip("/")
+    for origin in configured_origins.split(",")
+    if origin.strip()
+]
+
+if APP_ENV == "development" and not allowed_origins:
+    allowed_origins = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+
+CORS(
+    app,
+    resources={
+        r"/*": {
+            "origins": allowed_origins,
+            "methods": ["GET", "HEAD", "POST", "OPTIONS"],
+            "allow_headers": [
+                "Content-Type",
+                "Bypass-Tunnel-Reminder",
+            ],
+        }
+    },
+)
 
 LANGUAGE_CODES = {
     "kannada": "kn",
@@ -22,39 +78,58 @@ LANGUAGE_CODES = {
 
 @app.route('/assess', methods=['POST'])
 def assess_audio():
-    data = request.json
-    phrase = data['phrase']
-    language = data['language'].lower()
-    phonetics = data.get('phonetics', '')
+    if not request.is_json:
+        return jsonify({'error': 'Request body must be JSON'}), 400
 
-    # --- Accept either audio_url or audio_base64 ---
-    if 'audio_base64' in data:
-        audio_bytes = base64.b64decode(data['audio_base64'])
-    elif 'audio_url' in data:
-        import requests
-        r = requests.get(data['audio_url'])
-        audio_bytes = r.content
-    else:
-        return jsonify({'error': 'No audio provided'}), 400
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({'error': 'Request body must be a JSON object'}), 400
+
+    if 'audio_url' in data:
+        return jsonify({'error': 'audio_url is not supported; send audio_base64'}), 400
+
+    phrase = data.get('phrase')
+    if not isinstance(phrase, str) or not phrase.strip():
+        return jsonify({'error': 'phrase must be a nonempty string'}), 400
+
+    language = data.get('language')
+    if not isinstance(language, str) or not language.strip():
+        return jsonify({'error': 'language must be a nonempty string'}), 400
+    language = language.strip().lower()
+
+    phonetics = data.get('phonetics', '')
+    if not isinstance(phonetics, str):
+        return jsonify({'error': 'phonetics must be a string'}), 400
+
+    encoded_audio = data.get('audio_base64')
+    if not isinstance(encoded_audio, str):
+        return jsonify({'error': 'audio_base64 must be a string'}), 400
+
+    try:
+        audio_bytes = base64.b64decode(encoded_audio, validate=True)
+    except (binascii.Error, ValueError):
+        return jsonify({'error': 'audio_base64 must contain valid Base64 data'}), 400
+
+    if not audio_bytes:
+        return jsonify({'error': 'Audio data must not be empty'}), 400
 
     lang_code = LANGUAGE_CODES.get(language, language[:2])
 
     tmp_path = None
+    preprocessed_path = None
     try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.webm') as tmp:
-            tmp.write(audio_bytes)
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
             tmp_path = tmp.name
+            tmp.write(audio_bytes)
 
         print(f"[DEBUG] Processing audio file size: {os.path.getsize(tmp_path)} bytes for language '{language}'")
 
         # 1. Preprocess audio (format conversion, noise reduction, volume normalization, silence trimming)
-        preprocessed_path = tmp_path
         try:
-            from audio_preprocessor import preprocess
+            from audio_preprocessor import AudioPreprocessingError, preprocess
             preprocessed_path, _ = preprocess(tmp_path)
-        except Exception as prep_err:
-            print(f"[PREPROCESS WARN] Preprocessing failed, proceeding with raw audio: {prep_err}")
-            preprocessed_path = tmp_path
+        except AudioPreprocessingError:
+            return jsonify({'error': 'Audio is empty, corrupt, or unsupported'}), 400
 
         # 2. Local Whisper transcription (100% offline, zero rate limits, prompt-grounded)
         transcription = transcribe(preprocessed_path, language, phrase=phrase, phonetics=phonetics)
@@ -72,12 +147,16 @@ def assess_audio():
     except Exception as e:
         safe_error = str(e).encode('ascii', 'backslashreplace').decode('ascii')
         print(f"[ERROR] {safe_error}")
-        return jsonify({'error': safe_error}), 500
+        return jsonify({'error': 'Audio assessment failed'}), 500
     finally:
-        if tmp_path and os.path.exists(tmp_path):
-            os.remove(tmp_path)
-        if 'preprocessed_path' in locals() and preprocessed_path and preprocessed_path != tmp_path and os.path.exists(preprocessed_path):
-            os.remove(preprocessed_path)
+        for path in (preprocessed_path, tmp_path):
+            if path:
+                try:
+                    os.remove(path)
+                except FileNotFoundError:
+                    pass
+                except OSError as cleanup_error:
+                    print(f"[CLEANUP WARN] Could not remove temporary audio file: {cleanup_error}")
 
 
 @app.route('/transcribe', methods=['POST'])
@@ -184,6 +263,9 @@ def text_to_speech():
 def health():
     return jsonify({'status': 'ok', 'service': 'langbridge-speech-service'})
 
+@app.errorhandler(413)
+def request_too_large(error):
+    return jsonify({"error": "Your Request is too large"}), 413
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))

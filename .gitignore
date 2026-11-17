@@ -13,10 +13,18 @@ dist-ssr
 *.local
 
 # Python
-python-service/venv
-__pycache__/
-**/__pycache__/
-*.pyc
+# Python environments and generated files
+python-service/.venv/
+python-service/venv/
+python-service/__pycache__/
+python-service/**/*.pyc
+
+# Local model caches
+python-service/models/
+python-service/.cache/
+
+# Temporary deployment checks
+python-service/.vercel-test-deps/
 
 # Environment
 .env
