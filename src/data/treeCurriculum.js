@@ -136,10 +136,34 @@ export const RAW_CURRICULUM_BY_LANG = {
  */
 export function personalizePhrase(text, userName) {
   if (!text || typeof text !== "string") return text;
-  const nameToUse = userName && userName.trim() ? userName.trim() : "Friend";
+  let resolvedName = userName && userName.trim() ? userName.trim() : "";
+  if (!resolvedName && typeof window !== "undefined" && window.localStorage) {
+    try {
+      const stored = localStorage.getItem("userName");
+      if (stored && stored.trim()) resolvedName = stored.trim();
+    } catch {
+      // ignore storage access errors
+    }
+  }
+  const nameToUse = resolvedName || "Friend";
   return text
-    .replace(/{Name}/g, nameToUse)
-    .replace(/{userName}/g, nameToUse);
+    .replace(/\{Name\}/gi, nameToUse)
+    .replace(/\{userName\}/gi, nameToUse)
+    .replace(/ರಾಹುಲ್/g, nameToUse)
+    .replace(/రాహుల్/g, nameToUse)
+    .replace(/ராஹுல்/g, nameToUse)
+    .replace(/രാഹുൽ/g, nameToUse)
+    .replace(/\bRahul\b/gi, nameToUse)
+    .replace(/ಕಾರ್ತಿಕ್|கார்த்திக்/g, nameToUse)
+    .replace(/\bKarthik\b/gi, nameToUse)
+    .replace(/ಸುರೇಶ್|సురేష్/g, nameToUse)
+    .replace(/\bSuresh\b/gi, nameToUse)
+    .replace(/ಅನೂಪ್|അനൂപ്/g, nameToUse)
+    .replace(/\bAnoop\b/gi, nameToUse)
+    .replace(/ಮುತ್ತಪ್ಪ/g, nameToUse)
+    .replace(/\bMuthappa\b/gi, nameToUse)
+    .replace(/ಅಶೋಕ್/g, nameToUse)
+    .replace(/\bAshok\b/gi, nameToUse);
 }
 
 /**

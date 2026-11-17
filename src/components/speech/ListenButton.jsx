@@ -1,5 +1,6 @@
 import { getFlaskUrl } from "../../lib/flaskConfig";
 import { useState, useRef, useCallback } from "react";
+import { personalizePhrase } from "../../data/treeCurriculum";
 
 /**
  * A "Listen" button that fetches TTS audio from the Flask /tts endpoint
@@ -11,12 +12,14 @@ import { useState, useRef, useCallback } from "react";
  *  - size     (number)  – button diameter in px, default 44
  */
 function getTtsText(phrase, displayPhrase) {
-  let target = phrase || displayPhrase || "";
+  const p = personalizePhrase(phrase);
+  const dp = personalizePhrase(displayPhrase);
+  let target = p || dp || "";
 
   // If phrase is English but displayPhrase contains native script (non-ASCII), prefer displayPhrase
-  if (phrase && displayPhrase && /^[a-zA-Z0-9\s.,?!'-]+$/.test(phrase.trim())) {
-    if (/[^\p{ASCII}]/u.test(displayPhrase)) {
-      target = displayPhrase;
+  if (p && dp && /^[a-zA-Z0-9\s.,?!'-]+$/.test(p.trim())) {
+    if (/[^\p{ASCII}]/u.test(dp)) {
+      target = dp;
     }
   }
 

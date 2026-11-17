@@ -3,18 +3,48 @@ import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { getFlaskUrl } from "../../lib/flaskConfig";
+import { getFlaskUrl, setFlaskUrl, testFlaskConnection } from "../../lib/flaskConfig";
 import PronunciationFeedback from "./PronunciationFeedback";
 import WaveformVisualizer from "./WaveformVisualizer";
 import ListenButton from "./ListenButton";
 import Confetti from "react-confetti";
+import { personalizePhrase } from "../../data/treeCurriculum";
 
 export default function SpeechRecorder({ phrase, displayPhrase, language, userId, lessonId, phonetics, onComplete }) {
+  const cleanPhrase = personalizePhrase(phrase);
+  const cleanDisplayPhrase = personalizePhrase(displayPhrase || phrase);
+  const cleanPhonetics = personalizePhrase(phonetics);
+
   const navigate = useNavigate();
   const [recording, setRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
   const [feedback, setFeedback] = useState(null);
   const [processing, setProcessing] = useState(false);
+  const [showConfig, setShowConfig] = useState(false);
+  const [configUrl, setConfigUrl] = useState(getFlaskUrl());
+  const [testResult, setTestResult] = useState(null);
+  const [testing, setTesting] = useState(false);
+  const [connectionError, setConnectionError] = useState(null);
+
+  const handleTest = async (urlToTest) => {
+    setTesting(true);
+    setTestResult(null);
+    const target = urlToTest || configUrl;
+    const res = await testFlaskConnection(target);
+    setTesting(false);
+    setTestResult(res);
+  };
+
+  const handleApplyUrl = (urlToApply, andRetry = false) => {
+    const clean = setFlaskUrl(urlToApply);
+    setConfigUrl(clean);
+    setConnectionError(null);
+    setShowConfig(false);
+    setTestResult(null);
+    if (andRetry && audioBlob) {
+      setTimeout(() => submit(), 60);
+    }
+  };
 
   const generateUploadUrl = useMutation(api.speech.generateUploadUrl);
   const saveAssessment = useMutation(api.speech.saveAssessment);
@@ -65,7 +95,7 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
       const flaskResponse = await fetch(`${getFlaskUrl()}/assess`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Bypass-Tunnel-Reminder": "true" },
-        body: JSON.stringify({ audio_base64: base64, phrase, phonetics, language }),
+        body: JSON.stringify({ audio_base64: base64, phrase: cleanPhrase, phonetics: cleanPhonetics, language }),
       });
 
       if (!flaskResponse.ok) {
@@ -81,10 +111,27 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
         audioStorageId: storageId,
       });
 
-      setFeedback({ ...assessment, xpEarned, phonetics });
+      setFeedback({ ...assessment, xpEarned, phonetics: cleanPhonetics });
     } catch (err) {
       console.error("FAILED:", err);
-      alert(`Failed to analyze audio.\n${err.message}`);
+      const isNetwork =
+        err.name === "TypeError" ||
+        err.message?.includes("fetch") ||
+        err.message?.includes("Failed to fetch") ||
+        err.message?.includes("Flask error") ||
+        err.message?.includes("CORS") ||
+        err.message?.includes("Network");
+
+      if (isNetwork) {
+        setConnectionError({
+          url: getFlaskUrl(),
+          message: "Speech backend is offline or unreachable (503 Tunnel Unavailable). Please update your active tunnel URL or switch to local."
+        });
+        setConfigUrl(getFlaskUrl());
+        setShowConfig(true);
+      } else {
+        alert(`Failed to analyze audio.\n${err.message}`);
+      }
     } finally {
       setProcessing(false);
     }
@@ -264,9 +311,23 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
         position: 'relative', overflow: 'hidden',
       }}>
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 0%, rgba(46,204,113,0.08), transparent 60%)', pointerEvents: 'none' }} />
-        <p style={{ color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1.5px', margin: '0 0 16px', fontWeight: '700' }}>
-          Pronunciation Challenge
-        </p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+          <p style={{ color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1.5px', margin: 0, fontWeight: '700' }}>
+            Pronunciation Challenge
+          </p>
+          <button
+            type="button"
+            onClick={() => { setShowConfig(prev => !prev); setConfigUrl(getFlaskUrl()); setTestResult(null); }}
+            style={{
+              background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-subtle)',
+              borderRadius: 8, padding: '4px 10px', fontSize: 11, color: 'var(--text-secondary)',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
+            }}
+            title="Configure speech server URL"
+          >
+            <span>⚙️ Server</span>
+          </button>
+        </div>
         <p style={{ color: 'var(--text-secondary)', fontSize: '13px', margin: '0 0 10px', fontWeight: '500' }}>
           Listen &amp; repeat this phrase:
         </p>
@@ -276,22 +337,22 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
           fontWeight: '800', margin: '0 0 8px', lineHeight: 1.3,
           letterSpacing: '-0.5px',
         }}>
-          {displayPhrase || phrase}
+          {cleanDisplayPhrase || cleanPhrase}
         </p>
         {/* Phonetics guide */}
-        {phonetics && (
+        {cleanPhonetics && (
           <p style={{
             color: 'var(--purple)', fontSize: 'clamp(14px, 2.5vw, 18px)',
             fontWeight: '600', fontStyle: 'italic',
             margin: '0 0 18px', letterSpacing: '1px',
           }}>
-            🗣 {phonetics}
+            🗣 {cleanPhonetics}
           </p>
         )}
-        {!phonetics && <div style={{ marginBottom: 18 }} />}
+        {!cleanPhonetics && <div style={{ marginBottom: 18 }} />}
         {/* Listen button */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-          <ListenButton phrase={phrase} displayPhrase={displayPhrase} language={language} size={48} />
+          <ListenButton phrase={cleanPhrase} displayPhrase={cleanDisplayPhrase} language={language} size={48} />
           <span style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: '500' }}>Tap to hear pronunciation</span>
         </div>
       </div>
@@ -349,6 +410,118 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
           </div>
         )}
       </div>
+
+            {/* ── Server Connection / Config Panel ── */}
+      {(showConfig || connectionError) && (
+        <div className="glass-panel" style={{
+          padding: '20px', borderRadius: '16px',
+          background: connectionError ? 'rgba(239, 68, 68, 0.08)' : 'var(--bg-elevated)',
+          border: connectionError ? '1px solid rgba(239, 68, 68, 0.35)' : '1px solid var(--border-subtle)',
+          display: 'flex', flexDirection: 'column', gap: '14px',
+          animation: 'fadeUp 0.3s var(--ease-out) forwards'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <h4 style={{ margin: '0 0 4px', fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span>{connectionError ? '⚠️' : '⚙️'}</span> Speech Server Connection
+              </h4>
+              <p style={{ margin: 0, fontSize: 12, color: 'var(--text-secondary)' }}>
+                {connectionError
+                  ? <>Current tunnel <code style={{ color: '#f87171' }}>{getFlaskUrl()}</code> is unreachable (503 Tunnel Unavailable).</>
+                  : <>Active backend endpoint: <code>{getFlaskUrl()}</code></>}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => { setShowConfig(false); setConnectionError(null); }}
+              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 20, cursor: 'pointer', padding: '0 4px', lineHeight: 1 }}
+            >
+              ×
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              Active Server or Tunnel URL:
+            </label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                type="text"
+                value={configUrl}
+                onChange={(e) => setConfigUrl(e.target.value)}
+                placeholder="https://...loca.lt or http://127.0.0.1:5000"
+                style={{
+                  flex: 1, padding: '10px 14px', borderRadius: 10,
+                  background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)',
+                  color: 'var(--text-primary)', fontSize: 13, outline: 'none'
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => handleTest(configUrl)}
+                disabled={testing}
+                style={{
+                  padding: '10px 16px', borderRadius: 10, border: '1px solid var(--border-subtle)',
+                  background: 'var(--bg-elevated)', color: 'var(--text-primary)',
+                  fontWeight: 600, fontSize: 13, cursor: testing ? 'wait' : 'pointer',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {testing ? 'Testing…' : 'Test Ping'}
+              </button>
+            </div>
+
+            {testResult && (
+              <div style={{
+                fontSize: 12, padding: '8px 12px', borderRadius: 8,
+                background: testResult.ok ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                color: testResult.ok ? '#22c55e' : '#ef4444',
+                fontWeight: 600
+              }}>
+                {testResult.ok ? `✅ Connected successfully! Response time: ${testResult.latency}ms` : `❌ Offline: ${testResult.error || 'Connection failed'}`}
+              </div>
+            )}
+          </div>
+
+          {/* Quick Presets */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>Quick switch:</span>
+            <button
+              type="button"
+              onClick={() => { setConfigUrl('http://127.0.0.1:5000'); handleTest('http://127.0.0.1:5000'); }}
+              style={{
+                background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-subtle)',
+                borderRadius: 6, padding: '4px 10px', fontSize: 11, color: 'var(--text-primary)', cursor: 'pointer'
+              }}
+            >
+              💻 Local (127.0.0.1:5000)
+            </button>
+            <button
+              type="button"
+              onClick={() => { setConfigUrl('https://bumpy-pandas-shake.loca.lt'); handleTest('https://bumpy-pandas-shake.loca.lt'); }}
+              style={{
+                background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-subtle)',
+                borderRadius: 6, padding: '4px 10px', fontSize: 11, color: 'var(--text-primary)', cursor: 'pointer'
+              }}
+            >
+              🌐 Localtunnel
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+            <button
+              type="button"
+              onClick={() => handleApplyUrl(configUrl, !!audioBlob)}
+              style={{
+                flex: 1, padding: '10px', borderRadius: 10, border: 'none',
+                background: '#2ecc71', color: '#000', fontWeight: 700, fontSize: 13, cursor: 'pointer'
+              }}
+            >
+              {audioBlob ? 'Save URL & Retry Assessment' : 'Save URL'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Recorded audio + submit ── */}
       {audioBlob && !recording && (

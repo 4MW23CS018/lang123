@@ -174,74 +174,92 @@ export default function PhraseDetailsPanel({
               {isCompleted ? "Mastered (≥80%)" : isLocked ? "Locked" : "Ready to Practice"}
             </span>
 
-            {/* Pronunciation Audio */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <ListenButton
-                phrase={node.phrase}
-                displayPhrase={node.displayPhrase}
-                language={language}
-                size={40}
-                ariaLabel={`Pronounce ${node.phrase}`}
-              />
-            </div>
-          </div>
-
-          {/* Native Script */}
-          <h2
-            style={{
-              fontSize: 28,
-              fontWeight: 800,
-              color: "var(--text-primary)",
-              margin: "0 0 6px",
-              lineHeight: 1.25,
-              letterSpacing: "-0.5px",
-            }}
-          >
-            {node.displayPhrase || node.phrase}
-          </h2>
-
-          {/* Phonetics / Transliteration */}
-          {node.phonetics && (
-            <p
-              style={{
-                fontSize: 15,
-                color: "var(--text-muted)",
-                fontStyle: "italic",
-                margin: "0 0 12px",
-                fontWeight: 500,
-              }}
-            >
-              {node.phonetics}
-            </p>
-          )}
-
-          {/* English Meaning */}
-          <div
-            style={{
-              padding: "10px 14px",
-              borderRadius: 12,
-              background: "var(--bg-elevated)",
-              border: "1px solid var(--border-subtle)",
-              marginBottom: 14,
-            }}
-          >
-            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", display: "block", marginBottom: 2 }}>
-              English Meaning
-            </span>
-            <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "var(--text-primary)" }}>
-              {node.meaning || node.title}
-            </p>
-          </div>
-
-          {/* Context / When to use */}
-          {node.context && (
-            <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5, display: "flex", alignItems: "flex-start", gap: 8 }}>
-              <Sparkles size={16} color={categoryColor} style={{ flexShrink: 0, marginTop: 2 }} />
-              <div>
-                <strong style={{ color: "var(--text-primary)" }}>When to use: </strong>
-                {node.context}
+            {/* Pronunciation Audio (unlocked only) */}
+            {!isLocked && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <ListenButton
+                  phrase={node.phrase}
+                  displayPhrase={node.displayPhrase}
+                  language={language}
+                  size={40}
+                  ariaLabel={`Pronounce ${node.phrase}`}
+                />
               </div>
+            )}
+          </div>
+
+          {isLocked ? (
+            <div style={{ textAlign: "center", padding: "24px 12px" }}>
+              <div style={{ width: 60, height: 60, borderRadius: "50%", background: "var(--bg-elevated)", border: "2px dashed var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+                <Lock size={26} color="var(--text-muted)" />
+              </div>
+              <h3 style={{ margin: "0 0 6px", fontSize: 20, fontWeight: 800, color: "var(--text-muted)" }}>
+                Locked Phrase
+              </h3>
+              <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5 }}>
+                Master the previous phrase to unlock and practice this step!
+              </p>
             </div>
+          ) : (
+            <>
+              {/* Native Script */}
+              <h2
+                style={{
+                  fontSize: 28,
+                  fontWeight: 800,
+                  color: "var(--text-primary)",
+                  margin: "0 0 6px",
+                  lineHeight: 1.25,
+                  letterSpacing: "-0.5px",
+                }}
+              >
+                {node.displayPhrase || node.phrase}
+              </h2>
+
+              {/* Phonetics / Transliteration */}
+              {node.phonetics && (
+                <p
+                  style={{
+                    fontSize: 15,
+                    color: "var(--text-muted)",
+                    fontStyle: "italic",
+                    margin: "0 0 12px",
+                    fontWeight: 500,
+                  }}
+                >
+                  {node.phonetics}
+                </p>
+              )}
+
+              {/* English Meaning */}
+              <div
+                style={{
+                  padding: "10px 14px",
+                  borderRadius: 12,
+                  background: "var(--bg-elevated)",
+                  border: "1px solid var(--border-subtle)",
+                  marginBottom: 14,
+                }}
+              >
+                <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", display: "block", marginBottom: 2 }}>
+                  English Meaning
+                </span>
+                <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "var(--text-primary)" }}>
+                  {node.meaning || node.title}
+                </p>
+              </div>
+
+              {/* Context / When to use */}
+              {node.context && (
+                <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5, display: "flex", alignItems: "flex-start", gap: 8 }}>
+                  <Sparkles size={16} color={categoryColor} style={{ flexShrink: 0, marginTop: 2 }} />
+                  <div>
+                    <strong style={{ color: "var(--text-primary)", display: "block", marginBottom: 2 }}>When to use:</strong>
+                    {node.context}
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           {/* Authentic Review Badge (for minority/indigenous languages) */}

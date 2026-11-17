@@ -2,10 +2,15 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import ListenButton from "../components/speech/ListenButton";
+import { personalizePhrase } from "../data/treeCurriculum";
 
 export default function LessonDetail() {
   const { id } = useParams();
   const userId = localStorage.getItem("userId");
+  const user = useQuery(api.users.get, userId ? { userId } : "skip");
+  const storedUserName = localStorage.getItem("userName");
+  const userName = user?.name || user?.username || storedUserName || "Friend";
+
   const lesson = useQuery(api.lessons.getById, { id });
 
   if (!lesson || !userId) return (
@@ -17,6 +22,11 @@ export default function LessonDetail() {
     </div>
   );
 
+  const cleanTitle = personalizePhrase(lesson.title, userName);
+  const cleanPhrase = personalizePhrase(lesson.phrase, userName);
+  const cleanDisplayPhrase = personalizePhrase(lesson.displayPhrase || lesson.phrase, userName);
+  const cleanPhonetics = personalizePhrase(lesson.phonetics, userName);
+
   return (
     <div style={{ padding: '32px 24px', maxWidth: 640, margin: '0 auto' }}>
       <div className="glass-panel" style={{
@@ -25,12 +35,12 @@ export default function LessonDetail() {
       }}>
         <span style={{ display: 'inline-block', background: 'var(--accent-bg)', border: '1px solid var(--accent-border)', borderRadius: 999, padding: '4px 14px', fontSize: 12, color: 'var(--accent)', fontWeight: 600, marginBottom: 18, textTransform: 'capitalize' }}>{lesson.language}</span>
 
-        <h1 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 24px', letterSpacing: '-0.5px' }}>{lesson.title}</h1>
+        <h1 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 24px', letterSpacing: '-0.5px' }}>{cleanTitle}</h1>
 
         <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', display: 'block', marginBottom: 10 }}>Lesson Phrase</span>
         <div style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)', borderRadius: 14, padding: '22px 20px', marginBottom: 28 }}>
-          <p style={{ color: 'var(--text-primary)', fontSize: 20, margin: '0 0 8px', lineHeight: 1.7, fontWeight: 500 }}>{lesson.phrase}</p>
-          {lesson.phonetics && (
+          <p style={{ color: 'var(--text-primary)', fontSize: 20, margin: '0 0 8px', lineHeight: 1.7, fontWeight: 500 }}>{cleanPhrase}</p>
+          {cleanPhonetics && (
             <div style={{
               background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.15)',
               borderRadius: 10, padding: '10px 14px', marginBottom: 12,
@@ -38,12 +48,12 @@ export default function LessonDetail() {
             }}>
               <span style={{ fontSize: 14 }}>🗣</span>
               <span style={{ color: '#a5b4fc', fontSize: 15, fontWeight: 600, fontStyle: 'italic', letterSpacing: '0.5px' }}>
-                {lesson.phonetics}
+                {cleanPhonetics}
               </span>
             </div>
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <ListenButton phrase={lesson.phrase} displayPhrase={lesson.displayPhrase} language={lesson.language} size={42} />
+            <ListenButton phrase={cleanPhrase} displayPhrase={cleanDisplayPhrase} language={lesson.language} size={42} />
             <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>Listen to pronunciation</span>
           </div>
         </div>

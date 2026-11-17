@@ -10,11 +10,11 @@ import { GitFork, ChevronRight, Sparkles, Lock, Unlock, CheckCircle2, Trophy, Co
  * conversation branches down the page just like the hand-drawn architecture sketch.
  */
 function computeTopDownTreeLayout(roots, allNodes) {
-  const NODE_WIDTH = 250;
-  const NODE_HEIGHT = 135;
-  const LEVEL_HEIGHT = 180;
-  const HORIZONTAL_GAP = 28;
-  const ROOT_HORIZONTAL_GAP = 64;
+  const NODE_WIDTH = 64;
+  const NODE_HEIGHT = 64;
+  const LEVEL_HEIGHT = 130;
+  const HORIZONTAL_GAP = 40;
+  const ROOT_HORIZONTAL_GAP = 80;
 
   // 1. Calculate subtree widths bottom-up
   function computeSubtreeWidth(node) {
@@ -322,6 +322,8 @@ export default function PhraseTree({
                 border: "1px solid var(--border-subtle)",
                 padding: "20px 16px",
                 boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
+                position: "relative",
+                overflow: "visible",
               }}
             >
               {/* Root Card */}
@@ -606,6 +608,7 @@ export default function PhraseTree({
                   left: pos.x,
                   top: pos.y,
                   width: pos.width,
+                  height: pos.height,
                 }}
               />
             );

@@ -3,10 +3,15 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import SpeechRecorder from "../components/speech/SpeechRecorder";
 import { useState } from "react";
+import { personalizePhrase } from "../data/treeCurriculum";
 
 export default function Practice() {
   const { id } = useParams();
   const userId = localStorage.getItem("userId");
+  const user = useQuery(api.users.get, userId ? { userId } : "skip");
+  const storedUserName = localStorage.getItem("userName");
+  const userName = user?.name || user?.username || storedUserName || "Friend";
+
   const lesson = useQuery(api.lessons.getById, { id });
   
   // 0 to 100
@@ -20,6 +25,10 @@ export default function Practice() {
       </div>
     </div>
   );
+
+  const cleanPhrase = personalizePhrase(lesson.phrase, userName);
+  const cleanDisplayPhrase = personalizePhrase(lesson.displayPhrase || lesson.phrase, userName);
+  const cleanPhonetics = personalizePhrase(lesson.phonetics, userName);
 
   return (
     <div style={{ padding: '0 24px', maxWidth: 640, margin: '0 auto', height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -55,12 +64,12 @@ export default function Practice() {
         flex: 1, display: 'flex', flexDirection: 'column'
       }}>
         <SpeechRecorder 
-          phrase={lesson.phrase} 
-          displayPhrase={lesson.displayPhrase} 
+          phrase={cleanPhrase} 
+          displayPhrase={cleanDisplayPhrase} 
           language={lesson.language} 
           userId={userId} 
           lessonId={lesson._id} 
-          phonetics={lesson.phonetics} 
+          phonetics={cleanPhonetics} 
           onComplete={(success) => {
             if (success) setProgress(100);
           }}
