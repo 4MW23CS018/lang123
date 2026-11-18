@@ -33,6 +33,9 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
     const res = await testFlaskConnection(target);
     setTesting(false);
     setTestResult(res);
+    if (res.ok) {
+      setConnectionError(null);
+    }
   };
 
   const handleApplyUrl = (urlToApply, andRetry = false) => {
@@ -423,12 +426,14 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <h4 style={{ margin: '0 0 4px', fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span>{connectionError ? '⚠️' : '⚙️'}</span> Speech Server Connection
+                <span>{testResult?.ok ? '✅' : connectionError ? '⚠️' : '⚙️'}</span> Speech Server Connection
               </h4>
               <p style={{ margin: 0, fontSize: 12, color: 'var(--text-secondary)' }}>
-                {connectionError
-                  ? <>Current tunnel <code style={{ color: '#f87171' }}>{getFlaskUrl()}</code> is unreachable (503 Tunnel Unavailable).</>
-                  : <>Active backend endpoint: <code>{getFlaskUrl()}</code></>}
+                {testResult?.ok
+                  ? <span style={{ color: '#22c55e', fontWeight: 600 }}>Tunnel is online and ready! Click "Save URL &amp; Retry Assessment" below.</span>
+                  : connectionError
+                    ? <>Current tunnel <code style={{ color: '#f87171' }}>{getFlaskUrl()}</code> was unreachable when tested.</>
+                    : <>Active backend endpoint: <code>{getFlaskUrl()}</code></>}
               </p>
             </div>
             <button
@@ -498,13 +503,19 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
             </button>
             <button
               type="button"
-              onClick={() => { setConfigUrl('https://bumpy-pandas-shake.loca.lt'); handleTest('https://bumpy-pandas-shake.loca.lt'); }}
+              onClick={() => {
+                const envUrl = import.meta.env.VITE_FLASK_URL || '';
+                if (envUrl) {
+                  setConfigUrl(envUrl);
+                  handleTest(envUrl);
+                }
+              }}
               style={{
                 background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-subtle)',
                 borderRadius: 6, padding: '4px 10px', fontSize: 11, color: 'var(--text-primary)', cursor: 'pointer'
               }}
             >
-              🌐 Localtunnel
+              📄 From .env.production
             </button>
           </div>
 
