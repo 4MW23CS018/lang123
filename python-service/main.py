@@ -36,36 +36,36 @@ app.config["MAX_CONTENT_LENGTH"] = MAX_REQUEST_BYTES
 
 configured_origins = os.getenv("CORS_ALLOWED_ORIGINS", "")
 
-if APP_ENV == "production" and not configured_origins.strip():
-    raise RuntimeError(
-        "CORS_ALLOWED_ORIGINS must be configured in production"
-    )
-    # Default local development URLs for Vite/React
 allowed_origins = [
     origin.strip().rstrip("/")
     for origin in configured_origins.split(",")
     if origin.strip()
 ]
 
-if APP_ENV == "development" and not allowed_origins:
-    allowed_origins = [
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ]
+# Allow any origin if not explicitly configured so Vercel, localhost, and tunnels work
+cors_origins = allowed_origins if allowed_origins else "*"
 
 CORS(
     app,
     resources={
         r"/*": {
-            "origins": allowed_origins,
+            "origins": cors_origins,
             "methods": ["GET", "HEAD", "POST", "OPTIONS"],
-            "allow_headers": [
-                "Content-Type",
-                "Bypass-Tunnel-Reminder",
-            ],
+            "allow_headers": "*",
         }
     },
 )
+
+@app.after_request
+def add_cors_headers(response):
+    origin = request.headers.get("Origin")
+    if origin:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Methods"] = "GET, HEAD, POST, OPTIONS, PUT, DELETE"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Bypass-Tunnel-Reminder, Authorization, X-Requested-With, Origin, Accept"
+    else:
+        response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
 
 LANGUAGE_CODES = {
     "kannada": "kn",
@@ -76,8 +76,11 @@ LANGUAGE_CODES = {
     "kodava": "kn",   # Kodava uses Kannada script; closest TTS voice
 }
 
-@app.route('/assess', methods=['POST'])
+@app.route('/assess', methods=['POST', 'OPTIONS'])
 def assess_audio():
+    if request.method == 'OPTIONS':
+        return ('', 204)
+
     if not request.is_json:
         return jsonify({'error': 'Request body must be JSON'}), 400
 
@@ -201,8 +204,10 @@ def transcribe_audio():
                 pass
 
 
-@app.route('/tts', methods=['POST'])
+@app.route('/tts', methods=['POST', 'OPTIONS'])
 def text_to_speech():
+    if request.method == 'OPTIONS':
+        return ('', 204)
     """Generate audio pronunciation for a phrase in the given language."""
     data = request.json or {}
     phrase = data.get('phrase', '')
@@ -258,9 +263,11 @@ def text_to_speech():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/', methods=['GET'])
-@app.route('/health', methods=['GET'])
+@app.route('/', methods=['GET', 'OPTIONS'])
+@app.route('/health', methods=['GET', 'OPTIONS'])
 def health():
+    if request.method == 'OPTIONS':
+        return ('', 204)
     return jsonify({'status': 'ok', 'service': 'langbridge-speech-service'})
 
 @app.errorhandler(413)
