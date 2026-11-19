@@ -25,6 +25,7 @@ import type * as seedLessons from "../seedLessons.js";
 import type * as seedPath from "../seedPath.js";
 import type * as shop from "../shop.js";
 import type * as speech from "../speech.js";
+import type * as speechAction from "../speechAction.js";
 import type * as srs from "../srs.js";
 import type * as users from "../users.js";
 
@@ -52,6 +53,7 @@ declare const fullApi: ApiFromModules<{
   seedPath: typeof seedPath;
   shop: typeof shop;
   speech: typeof speech;
+  speechAction: typeof speechAction;
   srs: typeof srs;
   users: typeof users;
 }>;
