@@ -40,3 +40,8 @@ python-service/.vercel-test-deps/
 *.njsproj
 *.sln
 *.sw?
+
+# Scratch & generated QR assets
+scratch/
+public/langbridge-qr*.png
+

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from '../components/hooks/useTheme';
 import { usePWAInstall } from '../hooks/usePWAInstall';
-import { Sun, Moon, Target, Mic, BarChart3, Flame, Users, Star, Globe, BookOpen, Brain, Bell, Rocket, ArrowRight, Download } from 'lucide-react';
+import { Sun, Moon, Target, Mic, BarChart3, Flame, Users, Star, Globe, BookOpen, Brain, Bell, Rocket, ArrowRight, Download, Menu, X } from 'lucide-react';
 import { SpotlightCard } from '../components/ui/ReactBits';
 import InteractiveLanguageGlobe from '../components/ui/InteractiveLanguageGlobe';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -109,11 +109,27 @@ export default function Landing() {
   const { isDark, toggle } = useTheme();
   const { isInstalled, promptInstall } = usePWAInstall();
   const [scrolled, setScrolled] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 40);
     window.addEventListener('scroll', h, { passive: true });
     return () => window.removeEventListener('scroll', h);
+  }, []);
+
+  useEffect(() => {
+    if (drawerOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [drawerOpen]);
+
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') setDrawerOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   return (
@@ -126,9 +142,14 @@ export default function Landing() {
         borderBottom: scrolled ? '1px solid var(--border-subtle)' : '1px solid transparent',
         transition: 'all 0.3s ease'
       }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 20px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div 
+          className="app-top-nav-inner"
+          style={{ maxWidth: 1100, margin: '0 auto', padding: '0 20px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+        >
           <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.5px' }}>Lang<span style={{ color: 'var(--accent)' }}>Bridge</span></span>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          
+          {/* DESKTOP NAV */}
+          <div className="desktop-nav-group" style={{ alignItems: 'center', gap: 10 }}>
             {!isInstalled && (
               <button
                 onClick={promptInstall}
@@ -186,8 +207,163 @@ export default function Landing() {
               onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent-hover)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.transform = 'none'; }}>Get Started</Link>
           </div>
+
+          {/* MOBILE NAV: Get Started pill + Hamburger button */}
+          <div className="mobile-nav-group" style={{ alignItems: 'center', gap: 8 }}>
+            <Link 
+              to="/signup" 
+              style={{ 
+                padding: '7px 14px', fontSize: 13, fontWeight: 700, color: '#fff', 
+                background: 'var(--accent)', borderRadius: 10, textDecoration: 'none' 
+              }}
+            >
+              Get Started
+            </Link>
+
+            <button
+              onClick={() => setDrawerOpen(true)}
+              aria-label="Open Navigation Menu"
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 10,
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--border-default)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--text-primary)',
+                cursor: 'pointer',
+              }}
+            >
+              <Menu size={20} />
+            </button>
+          </div>
         </div>
       </nav>
+
+      {/* MOBILE DRAWER */}
+      <AnimatePresence>
+        {drawerOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setDrawerOpen(false)}
+              style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(0, 0, 0, 0.65)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                zIndex: 9998,
+              }}
+            />
+
+            <motion.aside
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+              style={{
+                position: 'fixed',
+                top: 0,
+                right: 0,
+                bottom: 0,
+                width: 'min(86vw, 340px)',
+                background: isDark ? '#10121e' : '#ffffff',
+                borderLeft: '1px solid var(--border-default)',
+                boxShadow: '-12px 0 36px rgba(0, 0, 0, 0.45)',
+                zIndex: 9999,
+                display: 'flex',
+                flexDirection: 'column',
+                padding: '20px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+                <span style={{ fontSize: 18, fontWeight: 800 }}>Lang<span style={{ color: 'var(--accent)' }}>Bridge</span></span>
+                <button
+                  onClick={() => setDrawerOpen(false)}
+                  style={{
+                    width: 34, height: 34, borderRadius: 10,
+                    background: 'var(--bg-elevated)', border: '1px solid var(--border-default)',
+                    color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
+                <Link
+                  to="/signup"
+                  onClick={() => setDrawerOpen(false)}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: '12px 18px', background: 'var(--accent)', color: '#fff',
+                    borderRadius: 12, fontWeight: 700, fontSize: 15, textDecoration: 'none',
+                    boxShadow: '0 4px 16px rgba(34, 197, 94, 0.3)',
+                  }}
+                >
+                  Get Started Free
+                </Link>
+
+                <Link
+                  to="/login"
+                  onClick={() => setDrawerOpen(false)}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: '12px 18px', background: 'var(--bg-elevated)', color: 'var(--text-primary)',
+                    borderRadius: 12, fontWeight: 650, fontSize: 14, textDecoration: 'none',
+                    border: '1px solid var(--border-default)',
+                  }}
+                >
+                  Log In
+                </Link>
+
+                {!isInstalled && (
+                  <button
+                    onClick={() => {
+                      promptInstall();
+                      setDrawerOpen(false);
+                    }}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                      padding: '12px 18px', background: 'var(--bg-elevated)', color: 'var(--accent)',
+                      borderRadius: 12, fontWeight: 650, fontSize: 14,
+                      border: '1px solid var(--accent-border)', cursor: 'pointer',
+                    }}
+                  >
+                    <Download size={16} />
+                    <span>Install Web App</span>
+                  </button>
+                )}
+
+                <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid var(--border-subtle)' }}>
+                  <button
+                    onClick={toggle}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      width: '100%', padding: '10px 14px', borderRadius: 12,
+                      background: 'var(--bg-elevated)', border: '1px solid var(--border-default)',
+                      color: 'var(--text-primary)', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {isDark ? <Sun size={16} style={{ color: '#f59e0b' }} /> : <Moon size={16} style={{ color: 'var(--accent)' }} />}
+                      <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+                    </div>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Toggle</span>
+                  </button>
+                </div>
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* HERO SECTION */}
       <section style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', padding: '110px 20px 70px', position: 'relative', overflow: 'hidden' }}>
