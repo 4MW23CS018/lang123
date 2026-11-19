@@ -79,14 +79,32 @@ export const signup = mutation({
   },
   handler: async (ctx, args) => {
     const cleanName = args.name.trim();
+    if (!cleanName) throw new Error("Please enter a username.");
+    if (args.password.length < 3) throw new Error("Password must be at least 3 characters.");
 
-    // Check if user already exists
-    const existing = await ctx.db
-      .query("users")
-      .filter((q) => q.eq(q.field("name"), cleanName))
-      .first();
+    const cleanLower = cleanName.toLowerCase();
 
-    if (existing) throw new Error("Username already taken. Please choose another.");
+    // Check if user already exists (case-insensitive to prevent duplicate accounts and confusion)
+    const allUsers = await ctx.db.query("users").collect();
+    const existing = allUsers.find(
+      (u) => u.name && u.name.trim().toLowerCase() === cleanLower
+    );
+
+    if (existing) {
+      // If the user entered the correct password for their existing account, seamlessly log them in!
+      const valid = await verifyPassword(args.password, existing.passwordHash);
+      if (valid) {
+        return {
+          userId: existing._id,
+          name: existing.name,
+          onboardingCompleted: !!existing.onboardingCompleted,
+          isExistingUser: true,
+        };
+      }
+
+      // If password did not match, raise clear error
+      throw new Error("USERNAME_ALREADY_TAKEN");
+    }
 
     const passwordHash = await hashPassword(args.password);
 
@@ -104,7 +122,12 @@ export const signup = mutation({
       onboardingCompleted: false,
     });
 
-    return userId;
+    return {
+      userId,
+      name: cleanName,
+      onboardingCompleted: false,
+      isExistingUser: false,
+    };
   },
 });
 
@@ -116,16 +139,28 @@ export const login = mutation({
   },
   handler: async (ctx, args) => {
     const term = (args.name || args.emailOrUsername || "").trim();
+    const termLower = term.toLowerCase();
 
-    const user = await ctx.db
+    // 1. Direct match query
+    let user = await ctx.db
       .query("users")
       .filter((q) =>
         q.or(
           q.eq(q.field("name"), term),
-          q.eq(q.field("email"), term.toLowerCase())
+          q.eq(q.field("email"), termLower)
         )
       )
       .first();
+
+    // 2. Case-insensitive fallback if exact case differed
+    if (!user) {
+      const allUsers = await ctx.db.query("users").collect();
+      user = allUsers.find(
+        (u) =>
+          (u.name && u.name.trim().toLowerCase() === termLower) ||
+          (u.email && u.email.trim().toLowerCase() === termLower)
+      );
+    }
 
     if (!user) throw new Error("No account found with that username.");
 

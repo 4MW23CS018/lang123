@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 export default function Login() {
-  const [name, setName] = useState('');
+  const [searchParams] = useSearchParams();
+  const prefill = searchParams.get('username') || '';
+  const [name, setName] = useState(prefill);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
