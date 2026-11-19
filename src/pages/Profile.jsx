@@ -10,7 +10,7 @@ import {
 import { FRAMES, BANNERS } from "../lib/cosmetics";
 import { SOUTH_INDIAN_LANGUAGES, useLanguage } from "../components/hooks/useLanguage";
 import shopGemIcon from "../assets/shop-gem.png";
-import { getFlaskUrl, setFlaskUrl } from "../lib/flaskConfig";
+import { getFlaskUrl, setFlaskUrl, ACTIVE_CLOUDFLARE_URL } from "../lib/flaskConfig";
 
 function getLevel(xp) { return Math.floor(Math.sqrt(xp / 100)) + 1; }
 function xpForLevel(lvl) { return Math.pow(lvl - 1, 2) * 100; }
@@ -658,96 +658,6 @@ export default function Profile() {
                 </div>
               )}
 
-              {/* TAB 5: AI SPEECH SERVER */}
-              {modalTab === "server" && (
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(14, 165, 233, 0.15)', color: '#0ea5e9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Server size={18} />
-                    </div>
-                    <div>
-                      <h4 style={{ margin: 0, fontSize: 15, fontWeight: 800 }}>Speech & Pronunciation Endpoint</h4>
-                      <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)' }}>Configured for Faster-Whisper, Gemini TTS, and gTTS.</p>
-                    </div>
-                  </div>
-
-                  <div style={{ background: 'var(--bg-elevated)', borderRadius: 14, padding: 16, marginBottom: 16, border: '1px solid var(--border-subtle)' }}>
-                    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>
-                      Active Endpoint URL
-                    </label>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <input
-                        type="url"
-                        value={serverUrlInput}
-                        onChange={(e) => setServerUrlInput(e.target.value)}
-                        placeholder="https://curly-buckets-yawn.loca.lt or http://127.0.0.1:5000"
-                        style={{
-                          flex: 1, padding: '10px 14px', borderRadius: 10,
-                          border: '1px solid var(--border-subtle)', background: 'var(--bg-base)',
-                          color: 'var(--text-primary)', fontSize: 13, fontFamily: 'monospace'
-                        }}
-                      />
-                      <button
-                        onClick={handleSaveServerUrl}
-                        style={{
-                          padding: '10px 16px', borderRadius: 10, background: 'var(--accent)',
-                          color: '#fff', border: 'none', fontWeight: 700, fontSize: 13,
-                          cursor: 'pointer', whiteSpace: 'nowrap'
-                        }}
-                      >
-                        Save
-                      </button>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
-                      <button
-                        onClick={handleTestServer}
-                        disabled={serverTesting}
-                        style={{
-                          padding: '8px 14px', borderRadius: 8, background: 'var(--bg-base)',
-                          color: 'var(--text-primary)', border: '1px solid var(--border-subtle)',
-                          fontWeight: 600, fontSize: 12, cursor: serverTesting ? 'wait' : 'pointer',
-                          display: 'flex', alignItems: 'center', gap: 6
-                        }}
-                      >
-                        <Wifi size={14} />
-                        <span>{serverTesting ? "Testing connection..." : "Test Connection"}</span>
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setServerUrlInput("http://127.0.0.1:5000");
-                          setFlaskUrl("http://127.0.0.1:5000");
-                          setServerStatusResult({ ok: true, msg: "Set to local: http://127.0.0.1:5000" });
-                        }}
-                        style={{
-                          padding: '8px 12px', borderRadius: 8, background: 'transparent',
-                          color: 'var(--text-muted)', border: 'none', fontSize: 12, cursor: 'pointer'
-                        }}
-                      >
-                        Use Localhost
-                      </button>
-                    </div>
-
-                    {serverStatusResult && (
-                      <div style={{
-                        marginTop: 12, padding: '10px 14px', borderRadius: 10, fontSize: 12,
-                        background: serverStatusResult.ok ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-                        color: serverStatusResult.ok ? '#22c55e' : '#ef4444',
-                        border: `1px solid ${serverStatusResult.ok ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
-                      }}>
-                        {serverStatusResult.msg}
-                      </div>
-                    )}
-                  </div>
-
-                  <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, background: 'rgba(245, 158, 11, 0.08)', padding: '12px 14px', borderRadius: 12, border: '1px solid rgba(245, 158, 11, 0.2)' }}>
-                    <strong style={{ color: '#f59e0b', display: 'block', marginBottom: 4 }}>💡 Important for Localtunnel (*.loca.lt):</strong>
-                    Localtunnel displays a security verification page on new tunnel URLs. Open your tunnel link in a new browser tab once (<a href={serverUrlInput || "#"} target="_blank" rel="noreferrer" style={{ color: '#0ea5e9', wordBreak: 'break-all' }}>{serverUrlInput}</a>) and click <strong>"Click to Continue"</strong> to unlock it for your browser.
-                  </div>
-                </div>
-              )}
-
               {/* TAB 2: AVATAR FRAMES */}
               {modalTab === "frames" && (
                 <div>
@@ -822,96 +732,6 @@ export default function Profile() {
                 </div>
               )}
 
-              {/* TAB 5: AI SPEECH SERVER */}
-              {modalTab === "server" && (
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(14, 165, 233, 0.15)', color: '#0ea5e9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Server size={18} />
-                    </div>
-                    <div>
-                      <h4 style={{ margin: 0, fontSize: 15, fontWeight: 800 }}>Speech & Pronunciation Endpoint</h4>
-                      <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)' }}>Configured for Faster-Whisper, Gemini TTS, and gTTS.</p>
-                    </div>
-                  </div>
-
-                  <div style={{ background: 'var(--bg-elevated)', borderRadius: 14, padding: 16, marginBottom: 16, border: '1px solid var(--border-subtle)' }}>
-                    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>
-                      Active Endpoint URL
-                    </label>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <input
-                        type="url"
-                        value={serverUrlInput}
-                        onChange={(e) => setServerUrlInput(e.target.value)}
-                        placeholder="https://curly-buckets-yawn.loca.lt or http://127.0.0.1:5000"
-                        style={{
-                          flex: 1, padding: '10px 14px', borderRadius: 10,
-                          border: '1px solid var(--border-subtle)', background: 'var(--bg-base)',
-                          color: 'var(--text-primary)', fontSize: 13, fontFamily: 'monospace'
-                        }}
-                      />
-                      <button
-                        onClick={handleSaveServerUrl}
-                        style={{
-                          padding: '10px 16px', borderRadius: 10, background: 'var(--accent)',
-                          color: '#fff', border: 'none', fontWeight: 700, fontSize: 13,
-                          cursor: 'pointer', whiteSpace: 'nowrap'
-                        }}
-                      >
-                        Save
-                      </button>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
-                      <button
-                        onClick={handleTestServer}
-                        disabled={serverTesting}
-                        style={{
-                          padding: '8px 14px', borderRadius: 8, background: 'var(--bg-base)',
-                          color: 'var(--text-primary)', border: '1px solid var(--border-subtle)',
-                          fontWeight: 600, fontSize: 12, cursor: serverTesting ? 'wait' : 'pointer',
-                          display: 'flex', alignItems: 'center', gap: 6
-                        }}
-                      >
-                        <Wifi size={14} />
-                        <span>{serverTesting ? "Testing connection..." : "Test Connection"}</span>
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setServerUrlInput("http://127.0.0.1:5000");
-                          setFlaskUrl("http://127.0.0.1:5000");
-                          setServerStatusResult({ ok: true, msg: "Set to local: http://127.0.0.1:5000" });
-                        }}
-                        style={{
-                          padding: '8px 12px', borderRadius: 8, background: 'transparent',
-                          color: 'var(--text-muted)', border: 'none', fontSize: 12, cursor: 'pointer'
-                        }}
-                      >
-                        Use Localhost
-                      </button>
-                    </div>
-
-                    {serverStatusResult && (
-                      <div style={{
-                        marginTop: 12, padding: '10px 14px', borderRadius: 10, fontSize: 12,
-                        background: serverStatusResult.ok ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-                        color: serverStatusResult.ok ? '#22c55e' : '#ef4444',
-                        border: `1px solid ${serverStatusResult.ok ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
-                      }}>
-                        {serverStatusResult.msg}
-                      </div>
-                    )}
-                  </div>
-
-                  <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, background: 'rgba(245, 158, 11, 0.08)', padding: '12px 14px', borderRadius: 12, border: '1px solid rgba(245, 158, 11, 0.2)' }}>
-                    <strong style={{ color: '#f59e0b', display: 'block', marginBottom: 4 }}>💡 Important for Localtunnel (*.loca.lt):</strong>
-                    Localtunnel displays a security verification page on new tunnel URLs. Open your tunnel link in a new browser tab once (<a href={serverUrlInput || "#"} target="_blank" rel="noreferrer" style={{ color: '#0ea5e9', wordBreak: 'break-all' }}>{serverUrlInput}</a>) and click <strong>"Click to Continue"</strong> to unlock it for your browser.
-                  </div>
-                </div>
-              )}
-
               {/* TAB 3: PROFILE BANNERS */}
               {modalTab === "banners" && (
                 <div>
@@ -981,96 +801,6 @@ export default function Profile() {
                 </div>
               )}
 
-              {/* TAB 5: AI SPEECH SERVER */}
-              {modalTab === "server" && (
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(14, 165, 233, 0.15)', color: '#0ea5e9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Server size={18} />
-                    </div>
-                    <div>
-                      <h4 style={{ margin: 0, fontSize: 15, fontWeight: 800 }}>Speech & Pronunciation Endpoint</h4>
-                      <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)' }}>Configured for Faster-Whisper, Gemini TTS, and gTTS.</p>
-                    </div>
-                  </div>
-
-                  <div style={{ background: 'var(--bg-elevated)', borderRadius: 14, padding: 16, marginBottom: 16, border: '1px solid var(--border-subtle)' }}>
-                    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>
-                      Active Endpoint URL
-                    </label>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <input
-                        type="url"
-                        value={serverUrlInput}
-                        onChange={(e) => setServerUrlInput(e.target.value)}
-                        placeholder="https://curly-buckets-yawn.loca.lt or http://127.0.0.1:5000"
-                        style={{
-                          flex: 1, padding: '10px 14px', borderRadius: 10,
-                          border: '1px solid var(--border-subtle)', background: 'var(--bg-base)',
-                          color: 'var(--text-primary)', fontSize: 13, fontFamily: 'monospace'
-                        }}
-                      />
-                      <button
-                        onClick={handleSaveServerUrl}
-                        style={{
-                          padding: '10px 16px', borderRadius: 10, background: 'var(--accent)',
-                          color: '#fff', border: 'none', fontWeight: 700, fontSize: 13,
-                          cursor: 'pointer', whiteSpace: 'nowrap'
-                        }}
-                      >
-                        Save
-                      </button>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
-                      <button
-                        onClick={handleTestServer}
-                        disabled={serverTesting}
-                        style={{
-                          padding: '8px 14px', borderRadius: 8, background: 'var(--bg-base)',
-                          color: 'var(--text-primary)', border: '1px solid var(--border-subtle)',
-                          fontWeight: 600, fontSize: 12, cursor: serverTesting ? 'wait' : 'pointer',
-                          display: 'flex', alignItems: 'center', gap: 6
-                        }}
-                      >
-                        <Wifi size={14} />
-                        <span>{serverTesting ? "Testing connection..." : "Test Connection"}</span>
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setServerUrlInput("http://127.0.0.1:5000");
-                          setFlaskUrl("http://127.0.0.1:5000");
-                          setServerStatusResult({ ok: true, msg: "Set to local: http://127.0.0.1:5000" });
-                        }}
-                        style={{
-                          padding: '8px 12px', borderRadius: 8, background: 'transparent',
-                          color: 'var(--text-muted)', border: 'none', fontSize: 12, cursor: 'pointer'
-                        }}
-                      >
-                        Use Localhost
-                      </button>
-                    </div>
-
-                    {serverStatusResult && (
-                      <div style={{
-                        marginTop: 12, padding: '10px 14px', borderRadius: 10, fontSize: 12,
-                        background: serverStatusResult.ok ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-                        color: serverStatusResult.ok ? '#22c55e' : '#ef4444',
-                        border: `1px solid ${serverStatusResult.ok ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
-                      }}>
-                        {serverStatusResult.msg}
-                      </div>
-                    )}
-                  </div>
-
-                  <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, background: 'rgba(245, 158, 11, 0.08)', padding: '12px 14px', borderRadius: 12, border: '1px solid rgba(245, 158, 11, 0.2)' }}>
-                    <strong style={{ color: '#f59e0b', display: 'block', marginBottom: 4 }}>💡 Important for Localtunnel (*.loca.lt):</strong>
-                    Localtunnel displays a security verification page on new tunnel URLs. Open your tunnel link in a new browser tab once (<a href={serverUrlInput || "#"} target="_blank" rel="noreferrer" style={{ color: '#0ea5e9', wordBreak: 'break-all' }}>{serverUrlInput}</a>) and click <strong>"Click to Continue"</strong> to unlock it for your browser.
-                  </div>
-                </div>
-              )}
-
               {/* TAB 4: BEST LANGUAGE */}
               {modalTab === "language" && (
                 <div>
@@ -1131,7 +861,7 @@ export default function Profile() {
                         type="url"
                         value={serverUrlInput}
                         onChange={(e) => setServerUrlInput(e.target.value)}
-                        placeholder="https://curly-buckets-yawn.loca.lt or http://127.0.0.1:5000"
+                        placeholder={ACTIVE_CLOUDFLARE_URL}
                         style={{
                           flex: 1, padding: '10px 14px', borderRadius: 10,
                           border: '1px solid var(--border-subtle)', background: 'var(--bg-base)',
@@ -1150,7 +880,7 @@ export default function Profile() {
                       </button>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginTop: 12 }}>
                       <button
                         onClick={handleTestServer}
                         disabled={serverTesting}
@@ -1163,6 +893,21 @@ export default function Profile() {
                       >
                         <Wifi size={14} />
                         <span>{serverTesting ? "Testing connection..." : "Test Connection"}</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setServerUrlInput(ACTIVE_CLOUDFLARE_URL);
+                          setFlaskUrl(ACTIVE_CLOUDFLARE_URL);
+                          setServerStatusResult({ ok: true, msg: `Set to Cloudflare Tunnel: ${ACTIVE_CLOUDFLARE_URL}` });
+                        }}
+                        style={{
+                          padding: '8px 12px', borderRadius: 8, background: 'rgba(34, 197, 94, 0.12)',
+                          color: 'var(--accent)', border: '1px solid rgba(34, 197, 94, 0.25)',
+                          fontWeight: 700, fontSize: 12, cursor: 'pointer'
+                        }}
+                      >
+                        ⚡ Use Cloudflare Tunnel
                       </button>
 
                       <button
@@ -1192,9 +937,9 @@ export default function Profile() {
                     )}
                   </div>
 
-                  <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, background: 'rgba(245, 158, 11, 0.08)', padding: '12px 14px', borderRadius: 12, border: '1px solid rgba(245, 158, 11, 0.2)' }}>
-                    <strong style={{ color: '#f59e0b', display: 'block', marginBottom: 4 }}>💡 Important for Localtunnel (*.loca.lt):</strong>
-                    Localtunnel displays a security verification page on new tunnel URLs. Open your tunnel link in a new browser tab once (<a href={serverUrlInput || "#"} target="_blank" rel="noreferrer" style={{ color: '#0ea5e9', wordBreak: 'break-all' }}>{serverUrlInput}</a>) and click <strong>"Click to Continue"</strong> to unlock it for your browser.
+                  <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, background: 'rgba(14, 165, 233, 0.08)', padding: '12px 14px', borderRadius: 12, border: '1px solid rgba(14, 165, 233, 0.2)' }}>
+                    <strong style={{ color: '#0ea5e9', display: 'block', marginBottom: 4 }}>🚀 Cloudflare Tunnel Ready:</strong>
+                    Fast, secure HTTPS endpoint running directly to your PC's Whisper model (4 CPU threads). Works seamlessly on both phone and laptop with zero reminder screens.
                   </div>
                 </div>
               )}

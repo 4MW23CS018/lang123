@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useAction } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { getFlaskUrl, setFlaskUrl, testFlaskConnection } from "../../lib/flaskConfig";
+import { getFlaskUrl, setFlaskUrl, testFlaskConnection, ACTIVE_CLOUDFLARE_URL } from "../../lib/flaskConfig";
 import PronunciationFeedback from "./PronunciationFeedback";
 import WaveformVisualizer from "./WaveformVisualizer";
 import ListenButton from "./ListenButton";
@@ -588,6 +588,16 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
           {/* Quick Presets */}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>Quick switch:</span>
+            <button
+              type="button"
+              onClick={() => { setConfigUrl(ACTIVE_CLOUDFLARE_URL); handleTest(ACTIVE_CLOUDFLARE_URL); }}
+              style={{
+                background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.3)',
+                borderRadius: 6, padding: '4px 10px', fontSize: 11, color: '#22c55e', fontWeight: 700, cursor: 'pointer'
+              }}
+            >
+              ⚡ Cloudflare Tunnel
+            </button>
             <button
               type="button"
               onClick={() => { setConfigUrl('http://127.0.0.1:5000'); handleTest('http://127.0.0.1:5000'); }}

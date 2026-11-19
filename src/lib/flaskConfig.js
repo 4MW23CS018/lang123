@@ -1,6 +1,7 @@
 // src/lib/flaskConfig.js
 
-export const DEFAULT_FALLBACK_URL = "https://langbridge-speech-backend.onrender.com";
+export const DEFAULT_FALLBACK_URL = "https://bruce-sized-opening-emacs.trycloudflare.com";
+export const ACTIVE_CLOUDFLARE_URL = "https://bruce-sized-opening-emacs.trycloudflare.com";
 
 /**
  * Returns the active speech service URL.
@@ -21,7 +22,13 @@ export function getFlaskUrl() {
 
     const override = localStorage.getItem("FLASK_URL");
     if (override && override.trim()) {
-      return override.trim().replace(/\/$/, "");
+      const cleanOverride = override.trim().replace(/\/$/, "");
+      // If we are on HTTPS (e.g. Vercel) and the override is plain HTTP localhost/127.0.0.1,
+      // it cannot work due to mixed-content security. Fall back to active tunnel URL.
+      if (window.location.protocol === "https:" && (cleanOverride.includes("127.0.0.1") || cleanOverride.includes("localhost"))) {
+        return envUrl || DEFAULT_FALLBACK_URL;
+      }
+      return cleanOverride;
     }
   }
 
