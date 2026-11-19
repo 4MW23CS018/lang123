@@ -148,9 +148,11 @@ def assess_audio():
             'ai_tip': ai_tip
         })
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         safe_error = str(e).encode('ascii', 'backslashreplace').decode('ascii')
         print(f"[ERROR] {safe_error}")
-        return jsonify({'error': 'Audio assessment failed'}), 500
+        return jsonify({'error': 'Audio assessment failed', 'details': safe_error}), 500
     finally:
         for path in (preprocessed_path, tmp_path):
             if path:
