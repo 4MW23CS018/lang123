@@ -1,6 +1,7 @@
 // src/lib/flaskConfig.js
 
-export const DEFAULT_FALLBACK_URL = "https://bruce-sized-opening-emacs.trycloudflare.com";
+export const DEFAULT_FALLBACK_URL = "https://obedience-retrain-jolliness.ngrok-free.dev";
+export const ACTIVE_NGROK_URL = "https://obedience-retrain-jolliness.ngrok-free.dev";
 export const ACTIVE_CLOUDFLARE_URL = "https://bruce-sized-opening-emacs.trycloudflare.com";
 
 /**
@@ -23,9 +24,13 @@ export function getFlaskUrl() {
     const override = localStorage.getItem("FLASK_URL");
     if (override && override.trim()) {
       const cleanOverride = override.trim().replace(/\/$/, "");
-      // If we are on HTTPS (e.g. Vercel) and the override is plain HTTP localhost/127.0.0.1,
-      // it cannot work due to mixed-content security. Fall back to active tunnel URL.
-      if (window.location.protocol === "https:" && (cleanOverride.includes("127.0.0.1") || cleanOverride.includes("localhost"))) {
+      // Auto-migrate legacy or broken overrides (localhost on HTTPS or old temporary tunnels)
+      if (
+        (window.location.protocol === "https:" && (cleanOverride.includes("127.0.0.1") || cleanOverride.includes("localhost"))) ||
+        cleanOverride.includes("trycloudflare.com") ||
+        cleanOverride.includes("loca.lt")
+      ) {
+        localStorage.removeItem("FLASK_URL");
         return envUrl || DEFAULT_FALLBACK_URL;
       }
       return cleanOverride;

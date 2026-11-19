@@ -10,7 +10,7 @@ import {
 import { FRAMES, BANNERS } from "../lib/cosmetics";
 import { SOUTH_INDIAN_LANGUAGES, useLanguage } from "../components/hooks/useLanguage";
 import shopGemIcon from "../assets/shop-gem.png";
-import { getFlaskUrl, setFlaskUrl, ACTIVE_CLOUDFLARE_URL } from "../lib/flaskConfig";
+import { getFlaskUrl, setFlaskUrl, ACTIVE_NGROK_URL, ACTIVE_CLOUDFLARE_URL } from "../lib/flaskConfig";
 
 function getLevel(xp) { return Math.floor(Math.sqrt(xp / 100)) + 1; }
 function xpForLevel(lvl) { return Math.pow(lvl - 1, 2) * 100; }
@@ -864,7 +864,7 @@ export default function Profile() {
                         type="url"
                         value={serverUrlInput}
                         onChange={(e) => setServerUrlInput(e.target.value)}
-                        placeholder={ACTIVE_CLOUDFLARE_URL}
+                        placeholder={ACTIVE_NGROK_URL}
                         style={{
                           flex: 1, padding: '10px 14px', borderRadius: 10,
                           border: '1px solid var(--border-subtle)', background: 'var(--bg-base)',
@@ -900,17 +900,32 @@ export default function Profile() {
 
                       <button
                         onClick={() => {
-                          setServerUrlInput(ACTIVE_CLOUDFLARE_URL);
-                          setFlaskUrl(ACTIVE_CLOUDFLARE_URL);
-                          setServerStatusResult({ ok: true, msg: `Set to Cloudflare Tunnel: ${ACTIVE_CLOUDFLARE_URL}` });
+                          setServerUrlInput(ACTIVE_NGROK_URL);
+                          setFlaskUrl(ACTIVE_NGROK_URL);
+                          setServerStatusResult({ ok: true, msg: `Set to Ngrok Permanent Tunnel: ${ACTIVE_NGROK_URL}` });
                         }}
                         style={{
-                          padding: '8px 12px', borderRadius: 8, background: 'rgba(34, 197, 94, 0.12)',
-                          color: 'var(--accent)', border: '1px solid rgba(34, 197, 94, 0.25)',
+                          padding: '8px 12px', borderRadius: 8, background: 'rgba(34, 197, 94, 0.15)',
+                          color: '#22c55e', border: '1px solid rgba(34, 197, 94, 0.35)',
                           fontWeight: 700, fontSize: 12, cursor: 'pointer'
                         }}
                       >
-                        ⚡ Use Cloudflare Tunnel
+                        ⚡ Use Ngrok (Permanent)
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setServerUrlInput(ACTIVE_CLOUDFLARE_URL);
+                          setFlaskUrl(ACTIVE_CLOUDFLARE_URL);
+                          setServerStatusResult({ ok: true, msg: `Set to Cloudflare: ${ACTIVE_CLOUDFLARE_URL}` });
+                        }}
+                        style={{
+                          padding: '8px 12px', borderRadius: 8, background: 'transparent',
+                          color: 'var(--text-secondary)', border: '1px solid var(--border-subtle)',
+                          fontWeight: 600, fontSize: 12, cursor: 'pointer'
+                        }}
+                      >
+                        Cloudflare Backup
                       </button>
 
                       <button
@@ -941,8 +956,8 @@ export default function Profile() {
                   </div>
 
                   <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, background: 'rgba(14, 165, 233, 0.08)', padding: '12px 14px', borderRadius: 12, border: '1px solid rgba(14, 165, 233, 0.2)' }}>
-                    <strong style={{ color: '#0ea5e9', display: 'block', marginBottom: 4 }}>🚀 Cloudflare Tunnel Ready:</strong>
-                    Fast, secure HTTPS endpoint running directly to your PC's Whisper model (4 CPU threads). Works seamlessly on both phone and laptop with zero reminder screens.
+                    <strong style={{ color: '#0ea5e9', display: 'block', marginBottom: 4 }}>🚀 Primary Ngrok Tunnel Active:</strong>
+                    Connected to your permanent ngrok URL streaming directly to your laptop's Whisper model (4 CPU threads). Works automatically on all devices.
                   </div>
                 </div>
               )}

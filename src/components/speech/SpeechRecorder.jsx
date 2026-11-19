@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useAction } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { getFlaskUrl, setFlaskUrl, testFlaskConnection, ACTIVE_CLOUDFLARE_URL } from "../../lib/flaskConfig";
+import { getFlaskUrl, setFlaskUrl, testFlaskConnection, ACTIVE_NGROK_URL, ACTIVE_CLOUDFLARE_URL } from "../../lib/flaskConfig";
 import PronunciationFeedback from "./PronunciationFeedback";
 import WaveformVisualizer from "./WaveformVisualizer";
 import ListenButton from "./ListenButton";
@@ -594,13 +594,23 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
             <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>Quick switch:</span>
             <button
               type="button"
-              onClick={() => { setConfigUrl(ACTIVE_CLOUDFLARE_URL); handleTest(ACTIVE_CLOUDFLARE_URL); }}
+              onClick={() => { setConfigUrl(ACTIVE_NGROK_URL); handleTest(ACTIVE_NGROK_URL); }}
               style={{
-                background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.3)',
+                background: 'rgba(34, 197, 94, 0.2)', border: '1px solid rgba(34, 197, 94, 0.4)',
                 borderRadius: 6, padding: '4px 10px', fontSize: 11, color: '#22c55e', fontWeight: 700, cursor: 'pointer'
               }}
             >
-              ⚡ Cloudflare Tunnel
+              ⚡ Ngrok (Permanent)
+            </button>
+            <button
+              type="button"
+              onClick={() => { setConfigUrl(ACTIVE_CLOUDFLARE_URL); handleTest(ACTIVE_CLOUDFLARE_URL); }}
+              style={{
+                background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-subtle)',
+                borderRadius: 6, padding: '4px 10px', fontSize: 11, color: 'var(--text-secondary)', cursor: 'pointer'
+              }}
+            >
+              Cloudflare
             </button>
             <button
               type="button"
