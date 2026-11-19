@@ -8,8 +8,8 @@ from collections import Counter
 # whereas 'base' frequently collapses into numeric or repetition hallucinations on Kannada.
 # CPU threads for Whisper inference: 4 threads for faster parallelized speech assessment
 cpu_threads = int(os.environ.get("WHISPER_THREADS", 4))
-# Default to 'base' model for low-latency inference on cloud instances (512MB RAM)
-MODEL_NAME = os.environ.get("WHISPER_MODEL", "base")
+# Default to 'tiny' model for ultra-low-latency inference on cloud instances (39MB, ~0.3s)
+MODEL_NAME = os.environ.get("WHISPER_MODEL", "tiny")
 print(f"[WHISPER] Loading local Whisper model '{MODEL_NAME}' with {cpu_threads} CPU threads...")
 try:
     model = WhisperModel(MODEL_NAME, device="cpu", compute_type="int8", cpu_threads=cpu_threads)

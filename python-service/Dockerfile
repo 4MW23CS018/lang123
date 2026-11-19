@@ -23,7 +23,7 @@ USER user
 # Production web server configuration (Render, HuggingFace, Railway, Docker)
 ENV PORT=10000
 ENV APP_ENV=production
-ENV WHISPER_MODEL=base
+ENV WHISPER_MODEL=tiny
 ENV WHISPER_THREADS=4
 EXPOSE 10000
 

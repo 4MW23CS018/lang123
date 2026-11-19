@@ -61,6 +61,7 @@ def preprocess(input_path, output_path=None):
     try:
         ffmpeg_cmd = [
             "ffmpeg", "-y",
+            "-threads", "4",
             "-i", input_path,
             "-ar", str(TARGET_SAMPLE_RATE),
             "-ac", "1",

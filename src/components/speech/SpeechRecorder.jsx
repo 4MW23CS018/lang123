@@ -157,20 +157,13 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
         reader.onerror = reject;
       });
 
-      const uploadUrl = await generateUploadUrl();
-      const uploadResult = await fetch(uploadUrl, {
-        method: "POST",
-        headers: { "Content-Type": audioBlob.type },
-        body: audioBlob,
-      });
-      const { storageId } = await uploadResult.json();
-
       const targetAssessPhrase = (cleanPhrase || nativeHeadline || "")
         .replace(/\(.*?\)/g, "")
         .replace(/\[.*?\]/g, "")
         .trim();
 
-      const flaskResponse = await fetch(`${getFlaskUrl()}/assess`, {
+      // 1. Fire Flask assessment immediately (primary user-facing request)
+      const assessPromise = fetch(`${getFlaskUrl()}/assess`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Bypass-Tunnel-Reminder": "true" },
         body: JSON.stringify({
@@ -181,6 +174,25 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
         }),
         signal: controller.signal,
       });
+
+      // 2. Concurrently upload audio recording to Convex storage in parallel (non-blocking)
+      const storagePromise = generateUploadUrl()
+        .then((uploadUrl) =>
+          fetch(uploadUrl, {
+            method: "POST",
+            headers: { "Content-Type": audioBlob.type },
+            body: audioBlob,
+          })
+        )
+        .then((res) => (res.ok ? res.json() : {}))
+        .then((data) => data.storageId || null)
+        .catch((err) => {
+          console.warn("[SpeechRecorder] Storage upload skipped:", err);
+          return null;
+        });
+
+      // Await both simultaneously — saves 2-4 seconds of mobile round-trip delay
+      const [flaskResponse, storageId] = await Promise.all([assessPromise, storagePromise]);
 
       clearTimeout(timeoutId);
       clearTimeout(stageTimer1);
