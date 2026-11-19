@@ -1,7 +1,7 @@
 // src/components/speech/SpeechRecorder.jsx
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useMutation } from "convex/react";
+import { useMutation, useAction } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { getFlaskUrl, setFlaskUrl, testFlaskConnection } from "../../lib/flaskConfig";
 import PronunciationFeedback from "./PronunciationFeedback";
@@ -71,6 +71,7 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
 
   const generateUploadUrl = useMutation(api.speech.generateUploadUrl);
   const saveAssessment = useMutation(api.speech.saveAssessment);
+  const assessSpeech = useAction(api.speechAction.assessSpeech);
 
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
@@ -137,17 +138,11 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
   const submit = async () => {
     if (!audioBlob) return;
     setProcessing(true);
-    setProcessingStage("Connecting to speech engine…");
-    const stageTimer1 = setTimeout(() => {
-      setProcessingStage("Waking up cloud engine (cold start)… ⚡");
-    }, 4500);
-    const stageTimer2 = setTimeout(() => {
-      setProcessingStage("Transcribing audio with Faster-Whisper…");
-    }, 18000);
+    setProcessingStage("Listening & evaluating pronunciation… ✨");
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
-    const timeoutId = setTimeout(() => controller.abort(), 55000);
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
 
     try {
       const base64 = await new Promise((resolve, reject) => {
@@ -162,20 +157,7 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
         .replace(/\[.*?\]/g, "")
         .trim();
 
-      // 1. Fire Flask assessment immediately (primary user-facing request)
-      const assessPromise = fetch(`${getFlaskUrl()}/assess`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Bypass-Tunnel-Reminder": "true" },
-        body: JSON.stringify({
-          audio_base64: base64,
-          phrase: targetAssessPhrase,
-          phonetics: effectivePhonetics || cleanPhonetics,
-          language
-        }),
-        signal: controller.signal,
-      });
-
-      // 2. Concurrently upload audio recording to Convex storage in parallel (non-blocking)
+      // 1. Upload audio recording to Convex storage in parallel for history
       const storagePromise = generateUploadUrl()
         .then((uploadUrl) =>
           fetch(uploadUrl, {
@@ -185,61 +167,68 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
           })
         )
         .then((res) => (res.ok ? res.json() : {}))
-        .then((data) => data.storageId || null)
-        .catch((err) => {
-          console.warn("[SpeechRecorder] Storage upload skipped:", err);
-          return null;
+        .then((data) => data.storageId || "")
+        .catch(() => "");
+
+      let assessment = null;
+
+      // 2. Fast cloud-native assessment via Convex action (Powered by Gemini Multimodal)
+      try {
+        const storageId = await storagePromise;
+        setProcessingStage("Scoring accuracy with AI… 🎯");
+        assessment = await assessSpeech({
+          userId,
+          lessonId,
+          phrase: targetAssessPhrase,
+          phonetics: effectivePhonetics || cleanPhonetics,
+          language,
+          audioBase64: base64,
+          mimeType: audioBlob.type,
+          audioStorageId: storageId || "",
         });
+      } catch (convexActionErr) {
+        console.warn("[SpeechRecorder] Primary Convex speech action failed, trying fallback:", convexActionErr);
 
-      // Await both simultaneously — saves 2-4 seconds of mobile round-trip delay
-      const [flaskResponse, storageId] = await Promise.all([assessPromise, storagePromise]);
+        // Fallback: Query Python service if active
+        try {
+          const flaskResponse = await fetch(`${getFlaskUrl()}/assess`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Bypass-Tunnel-Reminder": "true" },
+            body: JSON.stringify({
+              audio_base64: base64,
+              phrase: targetAssessPhrase,
+              phonetics: effectivePhonetics || cleanPhonetics,
+              language
+            }),
+            signal: controller.signal,
+          });
 
-      clearTimeout(timeoutId);
-      clearTimeout(stageTimer1);
-      clearTimeout(stageTimer2);
-
-      if (!flaskResponse.ok) {
-        const errorText = await flaskResponse.text();
-        throw new Error(`Flask error: ${flaskResponse.status} - ${errorText}`);
+          if (flaskResponse.ok) {
+            const flaskData = await flaskResponse.json();
+            const { xpEarned } = await saveAssessment({
+              userId, lessonId,
+              transcription: flaskData.transcription,
+              accuracy: flaskData.accuracy,
+              audioStorageId: "",
+            });
+            assessment = { ...flaskData, xpEarned };
+          }
+        } catch (flaskErr) {
+          console.warn("[SpeechRecorder] Flask fallback failed:", flaskErr);
+        }
       }
 
-      setProcessingStage("Evaluating pronunciation accuracy…");
-      const assessment = await flaskResponse.json();
-      const { xpEarned } = await saveAssessment({
-        userId, lessonId,
-        transcription: assessment.transcription,
-        accuracy: assessment.accuracy,
-        audioStorageId: storageId,
-      });
+      clearTimeout(timeoutId);
 
-      setFeedback({ ...assessment, xpEarned, phonetics: cleanPhonetics });
+      if (assessment) {
+        setFeedback({ ...assessment, phonetics: cleanPhonetics });
+      } else {
+        alert("We could not hear your speech clearly. Please try speaking a bit louder or closer to the microphone.");
+      }
     } catch (err) {
       clearTimeout(timeoutId);
-      clearTimeout(stageTimer1);
-      clearTimeout(stageTimer2);
-      console.error("FAILED:", err);
-      const isTimeout = err.name === "AbortError";
-      const isNetwork =
-        isTimeout ||
-        err.name === "TypeError" ||
-        err.message?.includes("fetch") ||
-        err.message?.includes("Failed to fetch") ||
-        err.message?.includes("Flask error") ||
-        err.message?.includes("CORS") ||
-        err.message?.includes("Network");
-
-      if (isNetwork) {
-        setConnectionError({
-          url: getFlaskUrl(),
-          message: isTimeout
-            ? "Cloud speech engine took over 50s to wake up (Render cold start). It is active now — please tap below to retry!"
-            : "Speech backend is offline or waking up. Please verify your connection or tap below to retry."
-        });
-        setConfigUrl(getFlaskUrl());
-        setShowConfig(true);
-      } else {
-        alert(`Failed to analyze audio.\n${err.message}`);
-      }
+      console.error("Speech assessment failed:", err);
+      alert("Pronunciation check took too long. Please speak clearly and try again.");
     } finally {
       setProcessing(false);
       setProcessingStage("");
@@ -424,18 +413,20 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
           <p style={{ color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1.5px', margin: 0, fontWeight: '700' }}>
             Pronunciation Challenge
           </p>
-          <button
-            type="button"
-            onClick={() => { setShowConfig(prev => !prev); setConfigUrl(getFlaskUrl()); setTestResult(null); }}
-            style={{
-              background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-subtle)',
-              borderRadius: 8, padding: '4px 10px', fontSize: 11, color: 'var(--text-secondary)',
-              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
-            }}
-            title="Configure speech server URL"
-          >
-            <span>⚙️ Server</span>
-          </button>
+          {import.meta.env.DEV && (
+            <button
+              type="button"
+              onClick={() => { setShowConfig(prev => !prev); setConfigUrl(getFlaskUrl()); setTestResult(null); }}
+              style={{
+                background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-subtle)',
+                borderRadius: 8, padding: '4px 10px', fontSize: 11, color: 'var(--text-secondary)',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
+              }}
+              title="Configure speech server URL"
+            >
+              <span>⚙️ Dev Server</span>
+            </button>
+          )}
         </div>
         <p style={{ color: 'var(--text-secondary)', fontSize: '13px', margin: '0 0 10px', fontWeight: '500' }}>
           Listen &amp; repeat this phrase:
@@ -520,8 +511,8 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
         )}
       </div>
 
-            {/* ── Server Connection / Config Panel ── */}
-      {(showConfig || connectionError) && (
+            {/* ── Dev Server Connection / Config Panel (Dev mode only) ── */}
+      {showConfig && (
         <div className="glass-panel" style={{
           padding: '20px', borderRadius: '16px',
           background: connectionError ? 'rgba(239, 68, 68, 0.08)' : 'var(--bg-elevated)',
