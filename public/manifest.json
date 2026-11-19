@@ -1,0 +1,67 @@
+{
+  "id": "/?source=pwa",
+  "name": "LangBridge — South Indian Language Learning",
+  "short_name": "LangBridge",
+  "description": "Master Kannada, Tamil, Telugu, and Malayalam with AI speech recognition, handwriting tracing canvas, and conversational roleplay.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0b0e1a",
+  "theme_color": "#8b5cf6",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["education", "productivity", "games"],
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Daily Dashboard",
+      "short_name": "Home",
+      "url": "/dashboard",
+      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Interactive Lessons",
+      "short_name": "Lessons",
+      "url": "/lessons",
+      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Alphabet Handwriting Tracing",
+      "short_name": "Basics",
+      "url": "/basics",
+      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Voice Roleplay Practice",
+      "short_name": "Roleplay",
+      "url": "/roleplay",
+      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+    }
+  ]
+}

@@ -2,9 +2,10 @@ import { Link, useLocation } from 'react-router-dom';
 import LanguageSwitcher from './layout/LanguageSwitcher';
 import SideNav from './layout/SideNav';
 import { useTheme } from './hooks/useTheme';
+import { usePWAInstall } from '../hooks/usePWAInstall';
 import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { Home, Type, BookOpen, Mic, Sun, Moon } from 'lucide-react';
+import { Home, Type, BookOpen, Mic, Sun, Moon, Download } from 'lucide-react';
 import shopGemIcon from '../assets/shop-gem.png';
 
 const LEARNING_NAV = [
@@ -17,6 +18,7 @@ const LEARNING_NAV = [
 export default function Layout({ children }) {
   const loc = useLocation();
   const { isDark, toggle } = useTheme();
+  const { isInstalled, promptInstall } = usePWAInstall();
   const userId = localStorage.getItem('userId');
   const user = useQuery(api.users.get, userId ? { userId } : "skip");
 
@@ -131,10 +133,49 @@ export default function Layout({ children }) {
               {isDark ? <Sun size={18} /> : <Moon size={18} />}
             </button>
 
+            {/* In-app PWA Install Button for Chromium / Mobile */}
+            {!isInstalled && (
+              <button
+                onClick={promptInstall}
+                title="Install LangBridge as a desktop app"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  height: 38,
+                  padding: '0 14px',
+                  borderRadius: 11,
+                  background: 'var(--bg-elevated)',
+                  border: '1px solid var(--border-default)',
+                  color: 'var(--text-primary)',
+                  fontWeight: 600,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.16,1,0.3,1)',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = 'var(--accent)';
+                  e.currentTarget.style.color = 'var(--accent)';
+                  e.currentTarget.style.background = 'var(--accent-bg)';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = 'var(--border-default)';
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                  e.currentTarget.style.background = 'var(--bg-elevated)';
+                  e.currentTarget.style.transform = 'none';
+                }}
+              >
+                <Download size={14} style={{ color: 'var(--accent)' }} />
+                <span>Install App</span>
+              </button>
+            )}
+
             <LanguageSwitcher />
           </div>
         </div>
       </nav>
+
 
       {/* Discord-style Vertical Side Navigation Rail (Shop with Treasure Chest, Leaderboard, Profile Avatar icon) */}
       <SideNav user={user} />

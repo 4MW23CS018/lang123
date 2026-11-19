@@ -3,6 +3,10 @@ import { ConvexProvider } from 'convex/react';
 import convex from './lib/convex';
 import App from './App';
 import './index.css';
+import { registerServiceWorker } from './registerSW';
+
+// Register PWA service worker for offline caching and Chromium installability
+registerServiceWorker();
 
 // Automatically reload the page when a new deployment invalidates old chunk hashes
 window.addEventListener('vite:preloadError', (event) => {

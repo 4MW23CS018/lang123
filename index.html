@@ -3,9 +3,29 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="description" content="LangBridge — Learn South Indian languages like Kannada, Tamil, Telugu, and Malayalam with AI speech recognition, gamified lessons, and personalized learning plans." />
-    <meta name="theme-color" content="#0b0e1a" />
+    
+    <!-- PWA & Mobile Web App Meta -->
+    <meta name="theme-color" content="#8b5cf6" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="LangBridge" />
+    <meta name="application-name" content="LangBridge" />
+    <meta name="msapplication-TileColor" content="#8b5cf6" />
+
+    <!-- Capture native PWA install prompt at first opportunity -->
+    <script>
+      window.deferredPrompt = null;
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        window.deferredPrompt = e;
+        console.log('[PWA] Global beforeinstallprompt captured!');
+      });
+    </script>
     <meta property="og:title" content="LangBridge — Master South Indian Languages" />
     <meta property="og:description" content="Learn South Indian languages with AI speech recognition and gamified lessons." />
     <meta property="og:type" content="website" />
