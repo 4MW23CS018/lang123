@@ -15,7 +15,17 @@ export default function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault(); setError(''); setLoading(true);
     try { const userId = await signup({ name, password }); localStorage.setItem('userId', userId); navigate('/onboarding'); }
-    catch (err) { setError(err.message); }
+// added error message for signup instead of displaying full error     
+catch (err) {
+  const message = typeof err?.message === 'string' ? err.message : '';
+
+  if (message.includes('Username already taken')) {
+    setError('That username is already taken. Please choose another.');
+  } else {
+    setError('We couldn’t create your account. Please try again.');
+  }
+}
+
     finally { setLoading(false); }
   };
 
