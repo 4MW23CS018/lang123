@@ -123,7 +123,7 @@ Rules of the Companion:
     };
 
     // Ultra-reliable candidate cascade: fast low-latency models first
-    const candidateModels = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-flash", "gemini-2.0-flash-lite"];
+    const candidateModels = ["gemini-3-flash-preview", "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-2.5-flash-lite"];
     let lastError = null;
 
     for (const modelName of candidateModels) {

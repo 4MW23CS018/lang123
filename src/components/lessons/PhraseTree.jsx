@@ -16,15 +16,20 @@ function computeTopDownTreeLayout(roots, allNodes) {
   const HORIZONTAL_GAP = 40;
   const ROOT_HORIZONTAL_GAP = 80;
 
-  // 1. Calculate subtree widths bottom-up
+  // 1. Calculate subtree widths bottom-up with cycle prevention
+  const widthVisited = new Set();
   function computeSubtreeWidth(node) {
+    if (!node || widthVisited.has(node.nodeKey)) return 0;
+    widthVisited.add(node.nodeKey);
     if (!node.children || node.children.length === 0) {
       node._subtreeWidth = NODE_WIDTH + HORIZONTAL_GAP;
       return node._subtreeWidth;
     }
     let total = 0;
     for (const child of node.children) {
-      total += computeSubtreeWidth(child);
+      if (!widthVisited.has(child.nodeKey)) {
+        total += computeSubtreeWidth(child);
+      }
     }
     node._subtreeWidth = Math.max(total, NODE_WIDTH + HORIZONTAL_GAP);
     return node._subtreeWidth;
@@ -34,13 +39,16 @@ function computeTopDownTreeLayout(roots, allNodes) {
     computeSubtreeWidth(root);
   }
 
-  // 2. Position nodes top-down
+  // 2. Position nodes top-down with cycle prevention
   const positions = new Map();
+  const posVisited = new Set();
 
   function assignPositions(node, level, intervalLeft) {
+    if (!node || posVisited.has(node.nodeKey)) return;
+    posVisited.add(node.nodeKey);
     const y = 40 + level * LEVEL_HEIGHT;
     // Center node within its allocated horizontal interval
-    const x = intervalLeft + (node._subtreeWidth - HORIZONTAL_GAP - NODE_WIDTH) / 2;
+    const x = intervalLeft + ((node._subtreeWidth || (NODE_WIDTH + HORIZONTAL_GAP)) - HORIZONTAL_GAP - NODE_WIDTH) / 2;
 
     positions.set(node.nodeKey, {
       x,
@@ -53,8 +61,10 @@ function computeTopDownTreeLayout(roots, allNodes) {
     if (node.children && node.children.length > 0) {
       let childLeft = intervalLeft;
       for (const child of node.children) {
-        assignPositions(child, level + 1, childLeft);
-        childLeft += child._subtreeWidth;
+        if (!posVisited.has(child.nodeKey)) {
+          assignPositions(child, level + 1, childLeft);
+          childLeft += child._subtreeWidth || (NODE_WIDTH + HORIZONTAL_GAP);
+        }
       }
     }
   }

@@ -28,7 +28,7 @@ Return a strict JSON object (NO markdown formatting, just the raw JSON) with the
 }`;
 
     const response = await ai.models.generateContent({
-        model: 'gemini-3.5-flash-lite',
+        model: 'gemini-3-flash-preview',
         contents: prompt,
     });
     

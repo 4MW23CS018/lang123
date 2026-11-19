@@ -17,18 +17,18 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
 
   // Extract pure native script (never show parenthetical English/transliteration in the primary native headline)
   const nativeHeadline = (cleanDisplayPhrase || cleanPhrase || "")
-    .replace(/\(.*?\)/g, "")
-    .replace(/\[.*?\]/g, "")
+    .replace(/\(.*?\)/gs, "")
+    .replace(/\[.*?\]/gs, "")
     .trim();
 
   // Extract pure phonetic transliteration
   let effectivePhonetics = (cleanPhonetics || "")
-    .replace(/^\((.*)\)$/, "$1")
+    .replace(/^\((.*)\)$/s, "$1")
     .trim();
 
   // If phonetics is empty or matches native headline, extract from displayPhrase parentheses if present
   if (!effectivePhonetics || effectivePhonetics === nativeHeadline) {
-    const parenMatch = (displayPhrase || cleanDisplayPhrase || "").match(/\((.*?)\)/);
+    const parenMatch = (displayPhrase || cleanDisplayPhrase || "").match(/\((.*?)\)/s);
     if (parenMatch && parenMatch[1]) {
       effectivePhonetics = parenMatch[1].trim();
     }

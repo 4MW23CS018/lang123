@@ -147,7 +147,7 @@ Rules:
     // 2. Try Gemini API if key is present
     if (process.env.GEMINI_API_KEY) {
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      const candidateModels = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-3.5-flash-lite", "gemini-3.8-flash"];
+      const candidateModels = ["gemini-3-flash-preview", "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-2.5-flash-lite"];
 
       for (const modelName of candidateModels) {
         try {

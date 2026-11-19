@@ -86,17 +86,25 @@ export default function Practice() {
     };
   }, [lesson, staticMatch, userName]);
 
-  // Auto-heal DB record if stored phonetics was mismatched or corrupted
+  // Auto-heal DB record if stored phonetics, phrase, or displayPhrase was mismatched or corrupted
   useEffect(() => {
-    if (lesson && lesson._id && cleanPhonetics && lesson.phonetics !== cleanPhonetics) {
+    if (
+      lesson &&
+      lesson._id &&
+      (
+        (cleanPhonetics && lesson.phonetics !== cleanPhonetics) ||
+        (cleanPhrase && lesson.phrase !== cleanPhrase) ||
+        (cleanDisplayPhrase && lesson.displayPhrase !== cleanDisplayPhrase)
+      )
+    ) {
       updateLessonPhonetics({
         id: lesson._id,
         phrase: cleanPhrase,
         phonetics: cleanPhonetics,
-        displayPhrase: cleanPhrase,
+        displayPhrase: cleanDisplayPhrase,
       }).catch(() => {});
     }
-  }, [lesson, cleanPhrase, cleanPhonetics, updateLessonPhonetics]);
+  }, [lesson, cleanPhrase, cleanDisplayPhrase, cleanPhonetics, updateLessonPhonetics]);
 
   if (!lesson || !userId) return (
     <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

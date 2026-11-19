@@ -37,39 +37,46 @@ export const assessSpeech = action({
       try {
         const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-        const systemPrompt = `You are an expert pronunciation tutor and phonetic evaluator for ${language}.
+        const systemPrompt = `You are an expert pronunciation tutor and strict phonetic evaluator for ${language}.
 The student is practicing pronouncing this specific phrase:
 Expected Phrase (${language} script): "${phrase}"
-Canonical Phonetics: "${phonetics}"
+Canonical Phonetics / Transliteration: "${phonetics}"
 
 Task:
-Listen closely to the user's audio recording.
-1. Transcribe what the user said in authentic ${language} script (or Latin transliteration if incomplete).
-2. Calculate an accuracy score from 0 to 100 based on pronunciation correctness, accent, and completeness.
-   - 90-100: Excellent, native or near-native clarity
-   - 80-89: Very good, clear with minor vowel length or accent variation
-   - 60-79: Fair attempt, recognizable words with noticeable mispronunciations
-   - Below 60: Significant words missed or heavily slurred
-3. Provide a word-by-word breakdown for each word in "${phrase}".
-4. Provide a warm, encouraging 1-sentence tip.
+Listen carefully to the user's recorded audio.
+1. Transcribe EXACTLY what the user actually said in authentic ${language} script (or Latin transliteration if they spoke English, slang, or gibberish).
+2. If the audio is silent, background static, muffled, or the user did not attempt the phrase:
+   - accuracy: 0
+   - transcription: "Inaudible / Unclear"
+   - word_breakdown: All words marked "incorrect", score: 0
+   - ai_tip: "We couldn't hear your voice clearly. Please speak closer to your microphone and try again."
+3. If the user spoke words that differ from "${phrase}":
+   - Accurately score how well it matches "${phrase}" (genuine score from 0 to 100 based on phonetic similarity and correctness).
+   - DO NOT give high scores for wrong phrases or wrong words!
+   - Word breakdown: For each word in "${phrase}":
+     - status: "correct" (score >= 80) if clearly and correctly pronounced
+     - status: "partial" (score 50-79) if recognizable but mispronounced or missing syllables
+     - status: "mispronounced" (score 30-49) if heavily distorted
+     - status: "incorrect" (score 0-29) if missing, skipped, or completely wrong
+4. Provide a warm, helpful 1-sentence tip.
 
 Respond with strict JSON ONLY in this format:
 {
   "transcription": "...",
-  "accuracy": 92,
+  "accuracy": 85,
   "word_breakdown": [
     {
       "word": "...",
       "spoken_as": "...",
-      "score": 95,
+      "score": 85,
       "status": "correct",
       "note": "Clear pronunciation"
     }
   ],
-  "ai_tip": "Great job! Your pronunciation of '${phrase}' was very clear."
+  "ai_tip": "Great effort! ..."
 }`;
 
-        const candidateModels = ["gemini-2.0-flash", "gemini-1.5-flash"];
+        const candidateModels = ["gemini-flash-latest", "gemini-3.1-flash-lite", "gemini-3-flash-preview", "gemini-2.5-flash-lite"];
 
         for (const model of candidateModels) {
           try {
@@ -118,20 +125,20 @@ Respond with strict JSON ONLY in this format:
       }
     }
 
-    // 2. High-speed Fallback: Deterministic scoring if AI API is unavailable
+    // 2. High-speed Fallback: Honest failure state if AI API is temporarily unavailable or inaudible
     if (!assessmentResult) {
       const words = phrase.trim().split(/\s+/).filter(Boolean);
       assessmentResult = {
-        transcription: phrase,
-        accuracy: 88,
+        transcription: "Audio inaudible or unclear",
+        accuracy: 0,
         word_breakdown: words.map((w) => ({
           word: w,
-          spoken_as: w,
-          score: 88,
-          status: "correct",
-          note: "Pronounced clearly",
+          spoken_as: "-",
+          score: 0,
+          status: "incorrect",
+          note: "Audio could not be evaluated. Please check your microphone and speak clearly.",
         })),
-        ai_tip: `Great effort on "${phrase}"! Keep practicing for perfection.`,
+        ai_tip: "We could not catch what you said. Please speak closer to your microphone and try again.",
       };
     }
 

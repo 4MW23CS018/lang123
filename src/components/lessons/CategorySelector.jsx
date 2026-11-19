@@ -135,10 +135,10 @@ export default function CategorySelector({
         ref={scrollRef}
         style={{
           display: 'flex',
-          gap: 12,
+          gap: 14,
           overflowX: 'auto',
           scrollBehavior: 'smooth',
-          paddingBottom: 8,
+          padding: '6px 4px 12px',
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
           WebkitOverflowScrolling: 'touch',
@@ -158,24 +158,25 @@ export default function CategorySelector({
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelectCategory(cat.id); }}
               style={{
                 flex: '0 0 auto',
-                width: 215,
-                borderRadius: 16,
-                padding: '14px 15px',
+                width: 'clamp(210px, 32vw, 240px)',
+                borderRadius: 18,
+                padding: '16px 16px 14px',
                 cursor: 'pointer',
                 background: isSelected ? 'var(--bg-card)' : 'var(--bg-elevated)',
                 border: isSelected
                   ? `2px solid ${catColor}`
                   : '1px solid var(--border-subtle)',
                 boxShadow: isSelected
-                  ? `0 4px 18px ${catColor}25, 0 0 0 1px ${catColor}44`
+                  ? `0 6px 20px ${catColor}28, 0 0 0 1px ${catColor}44`
                   : 'var(--card-shadow)',
                 transform: isSelected ? 'translateY(-2px)' : 'none',
                 transition: 'all 0.2s var(--ease-out)',
                 position: 'relative',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 8,
-                minHeight: 138,
+                justifyContent: 'space-between',
+                minHeight: 152,
+                boxSizing: 'border-box',
               }}
               onMouseEnter={(e) => {
                 if (!isSelected) {
@@ -191,11 +192,11 @@ export default function CategorySelector({
               }}
             >
               {/* Top row: Icon & Status Badge */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                 <div style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 8,
+                  width: 34,
+                  height: 34,
+                  borderRadius: 10,
                   background: isSelected ? `${catColor}25` : 'var(--bg-subtle)',
                   color: isSelected ? catColor : 'var(--text-secondary)',
                   display: 'flex',
@@ -204,7 +205,7 @@ export default function CategorySelector({
                   transition: 'all 0.2s ease',
                   flexShrink: 0,
                 }}>
-                  <Icon size={16} />
+                  <Icon size={17} />
                 </div>
 
                 {/* Status pill */}
@@ -213,33 +214,33 @@ export default function CategorySelector({
                     display: 'flex',
                     alignItems: 'center',
                     gap: 3,
-                    padding: '2px 7px',
+                    padding: '3px 8px',
                     borderRadius: 999,
                     background: 'rgba(34, 197, 94, 0.15)',
                     color: '#22c55e',
-                    fontSize: 10,
+                    fontSize: 10.5,
                     fontWeight: 700,
                   }}>
-                    <Check size={10} /> Mastered
+                    <Check size={11} /> Mastered
                   </span>
                 ) : cat.isStarted ? (
                   <span style={{
-                    padding: '2px 7px',
+                    padding: '3px 8px',
                     borderRadius: 999,
                     background: `${catColor}20`,
                     color: catColor,
-                    fontSize: 10,
+                    fontSize: 10.5,
                     fontWeight: 700,
                   }}>
                     {cat.progressPercent}%
                   </span>
                 ) : (
                   <span style={{
-                    padding: '2px 7px',
+                    padding: '3px 8px',
                     borderRadius: 999,
                     background: 'var(--bg-subtle)',
                     color: 'var(--text-muted)',
-                    fontSize: 10,
+                    fontSize: 10.5,
                     fontWeight: 600,
                   }}>
                     {cat.totalPhrases} phrases
@@ -250,20 +251,20 @@ export default function CategorySelector({
               {/* Title & Description */}
               <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                 <h3 style={{
-                  fontSize: 13.5,
+                  fontSize: 14,
                   fontWeight: 750,
                   color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)',
-                  margin: '0 0 2px',
+                  margin: '0 0 4px',
                   letterSpacing: '-0.2px',
                   lineHeight: 1.25,
                 }}>
                   {cat.name}
                 </h3>
                 <p style={{
-                  fontSize: 11,
+                  fontSize: 11.5,
                   color: 'var(--text-muted)',
                   margin: 0,
-                  lineHeight: 1.3,
+                  lineHeight: 1.35,
                   display: '-webkit-box',
                   WebkitLineClamp: 2,
                   WebkitBoxOrient: 'vertical',
@@ -275,7 +276,7 @@ export default function CategorySelector({
 
               {/* Bottom mini progress bar */}
               <div style={{
-                height: 4,
+                height: 4.5,
                 borderRadius: 99,
                 background: 'var(--bg-subtle)',
                 overflow: 'hidden',

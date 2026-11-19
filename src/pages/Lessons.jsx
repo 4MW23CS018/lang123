@@ -26,7 +26,8 @@ export default function Lessons() {
 
   // Convex Subscriptions
   const lessons = useQuery(api.lessons.listByLanguage, { language });
-  const completedLessonIds = useQuery(api.progress.getCompletedLessonIds, { userId }) || [];
+  const rawCompleted = useQuery(api.progress.getCompletedLessonIds, { userId });
+  const completedLessonIds = useMemo(() => rawCompleted || [], [rawCompleted]);
   const user = useQuery(api.users.get, userId ? { userId } : "skip");
 
   // Determine user's real name for conversational personalization
@@ -55,42 +56,64 @@ export default function Lessons() {
     return buildCategoryTree(language, selectedCategoryId, completedLessonIds, lessons || [], userName);
   }, [language, selectedCategoryId, completedLessonIds, lessons, userName]);
 
-  // Auto-select initial node if none selected or on category change
+  // Stable selection of node without triggering render loops
   useEffect(() => {
     if (currentCategoryTree.allNodes.length > 0) {
-      const initial =
-        currentCategoryTree.allNodes.find((n) => n.status === "current") ||
-        currentCategoryTree.allNodes.find((n) => n.status === "available") ||
-        currentCategoryTree.roots[0] ||
-        currentCategoryTree.allNodes[0];
-
-      setSelectedNode(initial || null);
+      setSelectedNode((prev) => {
+        if (prev && currentCategoryTree.allNodes.some((n) => n.nodeKey === prev.nodeKey)) {
+          return prev;
+        }
+        return (
+          currentCategoryTree.allNodes.find((n) => n.status === "current") ||
+          currentCategoryTree.allNodes.find((n) => n.status === "available") ||
+          currentCategoryTree.roots[0] ||
+          currentCategoryTree.allNodes[0] ||
+          null
+        );
+      });
     } else {
       setSelectedNode(null);
       setIsDetailsOpen(false);
     }
-  }, [selectedCategoryId, currentCategoryTree]);
+  }, [selectedCategoryId, currentCategoryTree.allNodes.length]);
+
+  // Close details panel and sync browser history cleanly
+  const handleCloseDetails = () => {
+    setIsDetailsOpen(false);
+    if (window.history.state?.modal === "phraseDetails") {
+      try {
+        window.history.back();
+      } catch {}
+    }
+  };
 
   // Handle browser back gesture / button & Escape key to close open details panel smoothly without freezing
   useEffect(() => {
     const handlePopState = () => {
       setIsDetailsOpen(false);
+      document.body.style.overflow = "";
+      document.body.style.pointerEvents = "";
     };
     const handleKeyDown = (e) => {
-      if (e.key === "Escape") setIsDetailsOpen(false);
+      if (e.key === "Escape") handleCloseDetails();
     };
     window.addEventListener("popstate", handlePopState, { passive: true });
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("popstate", handlePopState);
       window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+      document.body.style.pointerEvents = "";
     };
   }, []);
 
-  // Node Click Handler
+  // Node Click Handler with history state support for mobile back gesture
   const handleNodeClick = (node) => {
     setSelectedNode(node);
     setIsDetailsOpen(true);
+    try {
+      window.history.pushState({ modal: "phraseDetails" }, "");
+    } catch {}
   };
 
   // Navigate to AI Custom Lessons Page
@@ -168,7 +191,7 @@ export default function Lessons() {
       {isDetailsOpen && selectedNode && (
         <PhraseDetailsPanel
           node={selectedNode}
-          onClose={() => setIsDetailsOpen(false)}
+          onClose={handleCloseDetails}
           onSelectNode={(newNode) => setSelectedNode(newNode)}
           category={currentCategory}
           language={language}
