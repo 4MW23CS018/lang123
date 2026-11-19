@@ -1,5 +1,5 @@
 // src/components/speech/SpeechRecorder.jsx
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
@@ -14,6 +14,25 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
   const cleanPhrase = personalizePhrase(phrase);
   const cleanDisplayPhrase = personalizePhrase(displayPhrase || phrase);
   const cleanPhonetics = personalizePhrase(phonetics);
+
+  // Extract pure native script (never show parenthetical English/transliteration in the primary native headline)
+  const nativeHeadline = (cleanDisplayPhrase || cleanPhrase || "")
+    .replace(/\(.*?\)/g, "")
+    .replace(/\[.*?\]/g, "")
+    .trim();
+
+  // Extract pure phonetic transliteration
+  let effectivePhonetics = (cleanPhonetics || "")
+    .replace(/^\((.*)\)$/, "$1")
+    .trim();
+
+  // If phonetics is empty or matches native headline, extract from displayPhrase parentheses if present
+  if (!effectivePhonetics || effectivePhonetics === nativeHeadline) {
+    const parenMatch = (displayPhrase || cleanDisplayPhrase || "").match(/\((.*?)\)/);
+    if (parenMatch && parenMatch[1]) {
+      effectivePhonetics = parenMatch[1].trim();
+    }
+  }
 
   const navigate = useNavigate();
   const [recording, setRecording] = useState(false);
@@ -55,6 +74,22 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
 
+  // Gracefully release microphone and media recorder on route change or back navigation
+  useEffect(() => {
+    return () => {
+      if (mediaRecorderRef.current) {
+        try {
+          if (mediaRecorderRef.current.state === "recording") {
+            mediaRecorderRef.current.stop();
+          }
+        } catch {}
+        try {
+          mediaRecorderRef.current.stream?.getTracks().forEach((t) => t.stop());
+        } catch {}
+      }
+    };
+  }, []);
+
   const start = async () => {
     setFeedback(null);
     setAudioBlob(null);
@@ -95,10 +130,20 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
       });
       const { storageId } = await uploadResult.json();
 
+      const targetAssessPhrase = (cleanPhrase || nativeHeadline || "")
+        .replace(/\(.*?\)/g, "")
+        .replace(/\[.*?\]/g, "")
+        .trim();
+
       const flaskResponse = await fetch(`${getFlaskUrl()}/assess`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Bypass-Tunnel-Reminder": "true" },
-        body: JSON.stringify({ audio_base64: base64, phrase: cleanPhrase, phonetics: cleanPhonetics, language }),
+        body: JSON.stringify({
+          audio_base64: base64,
+          phrase: targetAssessPhrase,
+          phonetics: effectivePhonetics || cleanPhonetics,
+          language
+        }),
       });
 
       if (!flaskResponse.ok) {
@@ -334,28 +379,28 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
         <p style={{ color: 'var(--text-secondary)', fontSize: '13px', margin: '0 0 10px', fontWeight: '500' }}>
           Listen &amp; repeat this phrase:
         </p>
-        {/* Large native script or fallback to phrase */}
+        {/* Large pure native script headline */}
         <p style={{
           color: 'var(--text-primary)', fontSize: 'clamp(28px, 5vw, 42px)',
           fontWeight: '800', margin: '0 0 8px', lineHeight: 1.3,
           letterSpacing: '-0.5px',
         }}>
-          {cleanDisplayPhrase || cleanPhrase}
+          {nativeHeadline || cleanPhrase}
         </p>
         {/* Phonetics guide */}
-        {cleanPhonetics && (
+        {effectivePhonetics && (
           <p style={{
             color: 'var(--purple)', fontSize: 'clamp(14px, 2.5vw, 18px)',
             fontWeight: '600', fontStyle: 'italic',
             margin: '0 0 18px', letterSpacing: '1px',
           }}>
-            🗣 {cleanPhonetics}
+            🗣 {effectivePhonetics}
           </p>
         )}
-        {!cleanPhonetics && <div style={{ marginBottom: 18 }} />}
+        {!effectivePhonetics && <div style={{ marginBottom: 18 }} />}
         {/* Listen button */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-          <ListenButton phrase={cleanPhrase} displayPhrase={cleanDisplayPhrase} language={language} size={48} />
+          <ListenButton phrase={nativeHeadline || cleanPhrase} displayPhrase={nativeHeadline} language={language} size={48} />
           <span style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: '500' }}>Tap to hear pronunciation</span>
         </div>
       </div>
@@ -454,7 +499,7 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
                 type="text"
                 value={configUrl}
                 onChange={(e) => setConfigUrl(e.target.value)}
-                placeholder="https://...loca.lt or http://127.0.0.1:5000"
+                placeholder="https://...onrender.com or http://127.0.0.1:5000"
                 style={{
                   flex: 1, padding: '10px 14px', borderRadius: 10,
                   background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)',

@@ -1,5 +1,5 @@
 import { getFlaskUrl } from "../../lib/flaskConfig";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { personalizePhrase } from "../../data/treeCurriculum";
 
 /**
@@ -34,6 +34,24 @@ export default function ListenButton({ phrase, displayPhrase, language, size = 4
   const cachedPhraseRef = useRef(null);
 
   const phraseToSpeak = getTtsText(phrase, displayPhrase);
+
+  // Stop audio on unmount or navigation
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        try {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+        } catch {}
+        audioRef.current = null;
+      }
+      if (blobUrlRef.current) {
+        try {
+          URL.revokeObjectURL(blobUrlRef.current);
+        } catch {}
+      }
+    };
+  }, []);
 
   const play = useCallback(async () => {
     // If already playing, stop it

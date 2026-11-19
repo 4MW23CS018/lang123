@@ -1,6 +1,6 @@
 // src/lib/flaskConfig.js
 
-export const DEFAULT_FALLBACK_URL = "http://127.0.0.1:5000";
+export const DEFAULT_FALLBACK_URL = "https://langbridge-speech-backend.onrender.com";
 
 /**
  * Returns the active speech service URL.

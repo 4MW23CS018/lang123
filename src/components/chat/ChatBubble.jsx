@@ -1,3 +1,5 @@
+import EnzoCompanion from './EnzoCompanion';
+
 /**
  * Individual chat message bubble with distinct styling for user vs assistant.
  * Supports basic markdown-like formatting: **bold**, `code`, line breaks.
@@ -82,15 +84,16 @@ export default function ChatBubble({ message, index }) {
       alignItems: 'flex-start', gap: 8,
       animation: `fadeUp 0.3s ease-out ${Math.min(index * 0.03, 0.3)}s both`,
     }}>
-      {/* Avatar */}
+      {/* EnZo RPG Companion Avatar */}
       {!isUser && (
         <div style={{
-          width: 28, height: 28, borderRadius: 10, flexShrink: 0,
-          background: 'linear-gradient(135deg, var(--purple), var(--accent))',
+          width: 30, height: 30, borderRadius: 10, flexShrink: 0,
+          background: 'var(--bg-elevated)',
+          border: '1px solid rgba(168, 85, 247, 0.3)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 14,
+          boxShadow: '0 2px 8px rgba(139, 92, 246, 0.15)',
         }}>
-          🤖
+          <EnzoCompanion size={26} mood="happy" animated={false} />
         </div>
       )}
 

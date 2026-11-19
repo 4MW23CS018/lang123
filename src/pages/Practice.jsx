@@ -1,9 +1,9 @@
 import { useParams, Link } from "react-router-dom";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import SpeechRecorder from "../components/speech/SpeechRecorder";
-import { useState } from "react";
-import { personalizePhrase } from "../data/treeCurriculum";
+import { useState, useMemo, useEffect } from "react";
+import { personalizePhrase, RAW_CURRICULUM_BY_LANG } from "../data/treeCurriculum";
 
 export default function Practice() {
   const { id } = useParams();
@@ -13,9 +13,80 @@ export default function Practice() {
   const userName = user?.name || user?.username || storedUserName || "Friend";
 
   const lesson = useQuery(api.lessons.getById, { id });
+  const updateLessonPhonetics = useMutation(api.lessons.updateLessonPhonetics);
   
   // 0 to 100
   const [progress, setProgress] = useState(0);
+
+  // Look up canonical static curriculum definition by nodeKey or phrase
+  const staticMatch = useMemo(() => {
+    if (!lesson) return null;
+    const lang = lesson.language || "Kannada";
+    const list = RAW_CURRICULUM_BY_LANG[lang] || [];
+
+    // 1. Match by nodeKey
+    if (lesson.nodeKey) {
+      const byKey = list.find((item) => item.nodeKey === lesson.nodeKey);
+      if (byKey) return byKey;
+    }
+
+    // 2. Match by pure native phrase without parenthetical transliterations
+    const cleanDbPhrase = (lesson.phrase || "").replace(/\(.*?\)/g, "").replace(/\[.*?\]/g, "").trim();
+    if (cleanDbPhrase) {
+      const byPhrase = list.find((item) => {
+        const itemPhrase = (item.phrase || "").replace(/\(.*?\)/g, "").replace(/\[.*?\]/g, "").trim();
+        return itemPhrase === cleanDbPhrase;
+      });
+      if (byPhrase) return byPhrase;
+    }
+
+    return null;
+  }, [lesson]);
+
+  // Resolve pure native phrase and matching phonetics
+  const { cleanPhrase, cleanDisplayPhrase, cleanPhonetics } = useMemo(() => {
+    if (!lesson) return { cleanPhrase: "", cleanDisplayPhrase: "", cleanPhonetics: "" };
+
+    // 1. Pure native script (strip any parenthetical transliterations)
+    let rawNative = staticMatch?.phrase || lesson.phrase || lesson.displayPhrase || "";
+    rawNative = rawNative.replace(/\(.*?\)/g, "").replace(/\[.*?\]/g, "").trim();
+
+    // 2. Pure matching phonetics
+    let rawPhonetics = "";
+    if (staticMatch?.phonetics) {
+      rawPhonetics = staticMatch.phonetics;
+    } else {
+      // Check if displayPhrase had transliteration in parentheses: e.g. "(Nimma hesarēnu?)"
+      const parenMatch = (lesson.displayPhrase || "").match(/\((.*?)\)/);
+      if (parenMatch && parenMatch[1] && parenMatch[1].trim()) {
+        rawPhonetics = parenMatch[1].trim();
+      } else {
+        rawPhonetics = lesson.phonetics || "";
+      }
+    }
+
+    const pPhrase = personalizePhrase(rawNative, userName);
+    const pDisplay = personalizePhrase(rawNative, userName);
+    const pPhonetics = personalizePhrase(rawPhonetics, userName);
+
+    return {
+      cleanPhrase: pPhrase,
+      cleanDisplayPhrase: pDisplay,
+      cleanPhonetics: pPhonetics,
+    };
+  }, [lesson, staticMatch, userName]);
+
+  // Auto-heal DB record if stored phonetics was mismatched or corrupted
+  useEffect(() => {
+    if (lesson && lesson._id && cleanPhonetics && lesson.phonetics !== cleanPhonetics) {
+      updateLessonPhonetics({
+        id: lesson._id,
+        phrase: cleanPhrase,
+        phonetics: cleanPhonetics,
+        displayPhrase: cleanPhrase,
+      }).catch(() => {});
+    }
+  }, [lesson, cleanPhrase, cleanPhonetics, updateLessonPhonetics]);
 
   if (!lesson || !userId) return (
     <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -25,10 +96,6 @@ export default function Practice() {
       </div>
     </div>
   );
-
-  const cleanPhrase = personalizePhrase(lesson.phrase, userName);
-  const cleanDisplayPhrase = personalizePhrase(lesson.displayPhrase || lesson.phrase, userName);
-  const cleanPhonetics = personalizePhrase(lesson.phonetics, userName);
 
   return (
     <div style={{ padding: '0 24px', maxWidth: 640, margin: '0 auto', height: '100%', display: 'flex', flexDirection: 'column' }}>

@@ -252,7 +252,7 @@ export default function InteractiveLanguageGlobe() {
   }, [isDark]);
 
   return (
-    <div style={{ position: 'relative', width: '100%', maxWidth: 420, aspectRatio: '1/1', margin: '0 auto', cursor: 'grab', touchAction: 'none' }}>
+    <div style={{ position: 'relative', width: '100%', maxWidth: 420, aspectRatio: '1/1', margin: '0 auto', cursor: 'grab', touchAction: 'pan-y' }}>
       <canvas
         ref={canvasRef}
         style={{

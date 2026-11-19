@@ -8,6 +8,7 @@ const Signup = lazy(() => import('./pages/Signup'));
 const Onboarding = lazy(() => import('./pages/Onboarding'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Lessons = lazy(() => import('./pages/Lessons'));
+const CustomLessons = lazy(() => import('./pages/CustomLessons'));
 const LessonDetail = lazy(() => import('./pages/LessonDetail'));
 const Practice = lazy(() => import('./pages/Practice'));
 const Leaderboard = lazy(() => import('./pages/Leaderboard'));
@@ -41,17 +42,45 @@ const AmbientBackground = () => (
   </div>
 );
 
+class RouteErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error('[RouteErrorBoundary] Uncaught route error:', error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, textAlign: 'center' }}>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Something paused your journey</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: 0 }}>A quick refresh or heading to your dashboard will get you right back on track.</p>
+          <a href="/lessons" style={{ padding: '10px 20px', borderRadius: 10, background: 'var(--accent)', color: '#fff', textDecoration: 'none', fontWeight: 700, fontSize: 14 }}>
+            Go to Lessons
+          </a>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
   return (
     <>
       <AmbientBackground />
       <BrowserRouter>
-        <Suspense fallback={
-          <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ width: 40, height: 40, border: '3px solid var(--border-subtle)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-          </div>
-        }>
-          <Routes>
+        <RouteErrorBoundary>
+          <Suspense fallback={
+            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 40, height: 40, border: '3px solid var(--border-subtle)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            </div>
+          }>
+            <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
@@ -60,6 +89,7 @@ export default function App() {
             <Route path="/dashboard" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
             <Route path="/basics" element={<ProtectedRoute><Layout><Basics /></Layout></ProtectedRoute>} />
             <Route path="/lessons" element={<ProtectedRoute><Layout><Lessons /></Layout></ProtectedRoute>} />
+            <Route path="/custom-lessons" element={<ProtectedRoute><Layout><CustomLessons /></Layout></ProtectedRoute>} />
             <Route path="/lesson/:id" element={<ProtectedRoute><Layout><LessonDetail /></Layout></ProtectedRoute>} />
             <Route path="/practice/:id" element={<ProtectedRoute><Layout><Practice /></Layout></ProtectedRoute>} />
             <Route path="/leaderboard" element={<ProtectedRoute><Layout><Leaderboard /></Layout></ProtectedRoute>} />
@@ -72,6 +102,7 @@ export default function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
+        </RouteErrorBoundary>
         {/* Floating chat widget on all pages */}
         {localStorage.getItem('userId') && <ChatWidget />}
       </BrowserRouter>

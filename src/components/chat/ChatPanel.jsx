@@ -4,6 +4,7 @@ import { useAction, useQuery, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { Mic, Square, Loader2 } from 'lucide-react';
 import ChatBubble from './ChatBubble';
+import EnzoCompanion from './EnzoCompanion';
 
 const SUGGESTED_PROMPTS = [
   { icon: '👋', text: 'How do I say "hello"?' },
@@ -158,22 +159,36 @@ export default function ChatPanel({ compact = false }) {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
-            width: 36, height: 36, borderRadius: 12,
-            background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)',
+            width: 40, height: 40, borderRadius: 14,
+            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(34, 197, 94, 0.15) 100%)',
+            border: '1px solid rgba(168, 85, 247, 0.3)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 18, color: 'var(--text-primary)',
+            flexShrink: 0,
           }}>
-            ✨
+            <EnzoCompanion size={36} mood={isLoading ? 'thinking' : 'happy'} animated={true} />
           </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>
-              EnZo
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontWeight: 800, fontSize: 14.5, color: 'var(--text-primary)' }}>
+                EnZo
+              </span>
+              <span style={{
+                fontSize: 10.5,
+                fontWeight: 700,
+                color: '#c084fc',
+                background: 'rgba(168, 85, 247, 0.15)',
+                border: '1px solid rgba(168, 85, 247, 0.3)',
+                padding: '1px 6px',
+                borderRadius: 6,
+              }}>
+                Companion
+              </span>
             </div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
               <span style={{
                 width: 6, height: 6, borderRadius: '50%',
                 background: '#22c55e', display: 'inline-block',
-                boxShadow: '0 0 6px rgba(34,197,94,0.5)',
+                boxShadow: '0 0 6px rgba(34,197,94,0.6)',
               }} />
               Learning {language}
             </div>
@@ -210,20 +225,16 @@ export default function ChatPanel({ compact = false }) {
             animation: 'fadeUp 0.5s ease-out',
           }}>
             <div style={{
-              width: 64, height: 64, borderRadius: 20,
-              background: 'var(--bg-subtle)',
-              border: '1px solid var(--border-subtle)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 32,
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
             }}>
-              💬
+              <EnzoCompanion size={76} mood="happy" animated={true} />
             </div>
             <div style={{ textAlign: 'center' }}>
-              <p style={{ fontWeight: 700, fontSize: 16, color: 'var(--text-primary)', marginBottom: 4 }}>
-                Ask me anything about {language}!
+              <p style={{ fontWeight: 800, fontSize: 16.5, color: 'var(--text-primary)', marginBottom: 5 }}>
+                Greetings, Traveler! I'm EnZo ✨
               </p>
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', maxWidth: 280 }}>
-                I know your curriculum, progress, and can help with pronunciation, grammar, and cultural tips.
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', maxWidth: 290, lineHeight: 1.5 }}>
+                Your chibi companion on this quest to learn <strong>{language}</strong>. Ask me for words, pronunciation, grammar, or food recommendations!
               </p>
             </div>
             <div style={{

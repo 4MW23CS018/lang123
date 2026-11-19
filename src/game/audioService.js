@@ -259,6 +259,14 @@ export function stopAudioPlayback() {
     currentAudio = null;
   }
   if (typeof window !== "undefined" && "speechSynthesis" in window) {
-    window.speechSynthesis.cancel();
+    try {
+      window.speechSynthesis.cancel();
+    } catch {}
   }
+}
+
+// Automatically halt any audio or speech synthesis when user navigates back or switches page
+if (typeof window !== "undefined") {
+  window.addEventListener("popstate", stopAudioPlayback, { passive: true });
+  window.addEventListener("pagehide", stopAudioPlayback, { passive: true });
 }

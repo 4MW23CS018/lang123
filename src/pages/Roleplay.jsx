@@ -40,6 +40,16 @@ export default function Roleplay() {
   useEffect(() => {
     return () => {
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+      if (mediaRecorderRef.current) {
+        try {
+          if (mediaRecorderRef.current.state === 'recording') {
+            mediaRecorderRef.current.stop();
+          }
+        } catch {}
+        try {
+          mediaRecorderRef.current.stream?.getTracks().forEach(t => t.stop());
+        } catch {}
+      }
     };
   }, []);
 

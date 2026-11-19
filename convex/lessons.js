@@ -63,6 +63,28 @@ export const create = mutation({
   },
 });
 
+export const updateLessonPhonetics = mutation({
+  args: {
+    id: v.string(),
+    phrase: v.optional(v.string()),
+    phonetics: v.string(),
+    displayPhrase: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    try {
+      const normalizedId = ctx.db.normalizeId("lessons", args.id);
+      if (normalizedId) {
+        const patchData = { phonetics: args.phonetics };
+        if (args.phrase) patchData.phrase = args.phrase;
+        if (args.displayPhrase) patchData.displayPhrase = args.displayPhrase;
+        await ctx.db.patch(normalizedId, patchData);
+        return { success: true };
+      }
+    } catch (_) {}
+    return { success: false };
+  },
+});
+
 export const ensureLesson = mutation({
   args: {
     nodeKey: v.string(),

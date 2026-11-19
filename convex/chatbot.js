@@ -88,13 +88,18 @@ export const chat = action({
       }
     }
 
-    const systemInstruction = `You are EnZo, a friendly ${args.language} language tutor.
+    const systemInstruction = `You are EnZo, the player's trusty chibi RPG companion & language familiar in LangBridge!
+Your quest is to guide the adventurer on their journey learning ${args.language}.
 
-Script: ${alphabetRef}
-${curriculumText ? `Curriculum:\n${curriculumText}` : ""}
-${progressText ? `Student: ${progressText}` : ""}
+Language Basics: ${alphabetRef}
+${curriculumText ? `Curriculum Scrolls:\n${curriculumText}` : ""}
+${progressText ? `Adventurer Stats: ${progressText}` : ""}
 
-Rules: Always give native script + phonetics (hyphenated syllables) + English. Use curriculum phonetics when available. Be concise (2-3 paragraphs max). Encourage the student. Don't hallucinate phrases.`;
+Rules of the Companion:
+1. Always provide: Native script + Phonetic breakdown in brackets [hy-phen-a-ted] + English translation.
+2. Tone: Friendly, enthusiastic, and spirited like an anime/RPG companion (use playful companion terms like 'traveler', 'spell', 'scroll', 'quest' where natural, but stay focused and helpful).
+3. Brevity: Be punchy and concise (1-2 short paragraphs max). Never overwhelm the adventurer.
+4. Accuracy: Always teach authentic ${args.language} vocabulary, script, and natural phrasing.`;
 
     // ── 3. GENERATE ─────────────────────────────────────────
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -110,22 +115,20 @@ Rules: Always give native script + phonetics (hyphenated syllables) + English. U
         model,
         config: {
           systemInstruction: systemInstruction,
-          maxOutputTokens: 2048,
-          thinkingConfig: {
-            thinkingBudget: 0, // Disable thinking to prevent reasoning leaking into output
-          },
+          maxOutputTokens: 1024,
         },
         contents,
       });
-      return response.text || "I'm sorry, I couldn't generate a response. Please try again.";
+      return response.text;
     };
 
-    const candidateModels = ["gemini-3.5-flash-lite", "gemini-2.5-flash", "gemini-3.8-flash"];
+    // Ultra-reliable candidate cascade: fast low-latency models first
+    const candidateModels = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-flash", "gemini-2.0-flash-lite"];
     let lastError = null;
 
     for (const modelName of candidateModels) {
       try {
-        console.log(`[EnZo] Generating response using dedicated model: ${modelName} for ${args.language}`);
+        console.log(`[EnZo Companion] Calling model: ${modelName} for ${args.language}`);
         assistantReply = await callGemini(modelName);
         if (assistantReply && assistantReply.trim()) {
           lastError = null;
@@ -134,14 +137,37 @@ Rules: Always give native script + phonetics (hyphenated syllables) + English. U
       } catch (err) {
         lastError = err;
         const status = err?.status || err?.code || "unknown";
-        console.warn(`[EnZo] ${modelName} unavailable (${status}): ${err?.message || String(err)}. Trying next model in cascade...`);
-        await new Promise((r) => setTimeout(r, 600));
+        console.warn(`[EnZo] ${modelName} hit error (${status}): ${err?.message || String(err)}. Trying next companion model...`);
       }
     }
 
+    // Smart companion fallback if AI API is completely throttled or offline
     if (!assistantReply) {
-      console.error("[EnZo] All candidate models in cascade failed:", lastError);
-      assistantReply = "I'm a bit overloaded right now! Please wait a moment and try asking again. 💤";
+      console.warn("[EnZo] All candidate models failed, using companion fallback:", lastError);
+      const q = args.message.toLowerCase();
+      if (q.includes("hello") || q.includes("greet") || q.includes("hi")) {
+        const greetings = {
+          Kannada: "**ನಮಸ್ಕಾರ** [Na-mas-kaa-ra] — *Hello / Greetings!*\nA respectful greeting you can use anytime, traveler! ✨",
+          Tamil: "**வணக்கம்** [Va-nak-kam] — *Hello / Greetings!*\nSay this with folded hands for a classic warm welcome! 🌟",
+          Telugu: "**నమస్కారం** [Na-mas-kaa-ram] — *Hello / Greetings!*\nA polite and universal greeting on your quest! 📜",
+          Malayalam: "**നമസ്കാരം** [Na-mas-kaa-ram] — *Hello / Greetings!*\nUse this to greet anyone warmly in Kerala! ✨",
+          Tulu: "**ನಮಸ್ಕಾರ** [Na-mas-kaa-ra] / **ಸೊಲ್ಮೆಲು** [Sol-me-lu] — *Greetings / Thank you!* 🌟",
+          Kodava: "**ನಮಸ್ಕಾರ** [Na-mas-kaa-ra] — *Greetings, adventurer!* 🗡️",
+        };
+        assistantReply = greetings[args.language] || greetings["Kannada"];
+      } else if (q.includes("vowel") || q.includes("alphabet")) {
+        assistantReply = `Here is your alphabet scroll for **${args.language}**:\n${alphabetRef}\n\nPractice tracing each character in the **Basics** tab to unlock their power! 📜✨`;
+      } else if (q.includes("count") || q.includes("10") || q.includes("number")) {
+        const numbers = {
+          Kannada: "1: **ಒಂದು** [on-du], 2: **ಎರಡು** [e-ra-du], 3: **ಮೂರು** [moo-ru], 4: **ನಾಲ್ಕು** [naal-ku], 5: **ಐದು** [ai-du], 10: **ಹತ್ತು** [hat-tu]. 🔢",
+          Tamil: "1: **ஒன்று** [on-ru], 2: **இரண்டு** [i-ran-du], 3: **மூன்று** [moon-ru], 4: **நான்கு** [naan-gu], 5: **ஐந்து** [ain-du], 10: **பத்து** [pat-thu]. 🔢",
+          Telugu: "1: **ఒకటి** [o-ka-ti], 2: **రెండు** [ren-du], 3: **మూడు** [moo-du], 4: **నాలుగు** [naa-lu-gu], 5: **ఐదు** [ai-du], 10: **పది** [pa-di]. 🔢",
+          Malayalam: "1: **ഒന്ന്** [onnu], 2: **രണ്ട്** [randu], 3: **മൂന്ന്** [moonnu], 4: **നാല്** [naalu], 5: **അഞ്ച്** [anchu], 10: **പത്ത്** [paththu]. 🔢",
+        };
+        assistantReply = numbers[args.language] || numbers["Kannada"];
+      } else {
+        assistantReply = `I'm catching my magical companion breath, adventurer! 🌟 Try asking me again in a moment, or try asking for greetings, vowels, or numbers in ${args.language}!`;
+      }
     }
 
     // ── 4. STORE — persist both messages ─────────────────────

@@ -51,14 +51,14 @@ export default function CategorySelector({
   };
 
   return (
-    <div style={{ marginBottom: 28, position: 'relative' }}>
+    <div style={{ marginBottom: 12, position: 'relative' }}>
       {/* Category Section Title & Scroll buttons */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: 12,
-        padding: '0 4px',
+        marginBottom: 8,
+        padding: '0 2px',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{
@@ -158,23 +158,24 @@ export default function CategorySelector({
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelectCategory(cat.id); }}
               style={{
                 flex: '0 0 auto',
-                width: 210,
-                borderRadius: 16,
-                padding: '14px 16px',
+                width: 195,
+                borderRadius: 14,
+                padding: '11px 13px',
                 cursor: 'pointer',
                 background: isSelected ? 'var(--bg-card)' : 'var(--bg-elevated)',
                 border: isSelected
                   ? `2px solid ${catColor}`
                   : '1px solid var(--border-subtle)',
                 boxShadow: isSelected
-                  ? `0 6px 20px ${catColor}22, 0 0 0 1px ${catColor}44`
+                  ? `0 4px 16px ${catColor}25, 0 0 0 1px ${catColor}44`
                   : 'var(--card-shadow)',
                 transform: isSelected ? 'translateY(-2px)' : 'none',
                 transition: 'all 0.2s var(--ease-out)',
                 position: 'relative',
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'space-between',
+                gap: 5,
+                minHeight: 124,
               }}
               onMouseEnter={(e) => {
                 if (!isSelected) {
@@ -190,19 +191,20 @@ export default function CategorySelector({
               }}
             >
               {/* Top row: Icon & Status Badge */}
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
                 <div style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 10,
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
                   background: isSelected ? `${catColor}25` : 'var(--bg-subtle)',
                   color: isSelected ? catColor : 'var(--text-secondary)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   transition: 'all 0.2s ease',
+                  flexShrink: 0,
                 }}>
-                  <Icon size={18} />
+                  <Icon size={16} />
                 </div>
 
                 {/* Status pill */}
@@ -210,34 +212,34 @@ export default function CategorySelector({
                   <span style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 4,
-                    padding: '2px 8px',
+                    gap: 3,
+                    padding: '2px 7px',
                     borderRadius: 999,
                     background: 'rgba(34, 197, 94, 0.15)',
                     color: '#22c55e',
-                    fontSize: 10.5,
+                    fontSize: 10,
                     fontWeight: 700,
                   }}>
-                    <Check size={11} /> Mastered
+                    <Check size={10} /> Mastered
                   </span>
                 ) : cat.isStarted ? (
                   <span style={{
-                    padding: '2px 8px',
+                    padding: '2px 7px',
                     borderRadius: 999,
                     background: `${catColor}20`,
                     color: catColor,
-                    fontSize: 10.5,
+                    fontSize: 10,
                     fontWeight: 700,
                   }}>
                     {cat.progressPercent}%
                   </span>
                 ) : (
                   <span style={{
-                    padding: '2px 8px',
+                    padding: '2px 7px',
                     borderRadius: 999,
                     background: 'var(--bg-subtle)',
                     color: 'var(--text-muted)',
-                    fontSize: 10.5,
+                    fontSize: 10,
                     fontWeight: 600,
                   }}>
                     {cat.totalPhrases} phrases
@@ -246,22 +248,22 @@ export default function CategorySelector({
               </div>
 
               {/* Title & Description */}
-              <div>
+              <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                 <h3 style={{
-                  fontSize: 14.5,
+                  fontSize: 13.5,
                   fontWeight: 750,
                   color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)',
-                  margin: '0 0 4px',
-                  letterSpacing: '-0.3px',
+                  margin: '0 0 2px',
+                  letterSpacing: '-0.2px',
                   lineHeight: 1.25,
                 }}>
                   {cat.name}
                 </h3>
                 <p style={{
-                  fontSize: 11.5,
+                  fontSize: 11,
                   color: 'var(--text-muted)',
-                  margin: '0 0 10px',
-                  lineHeight: 1.35,
+                  margin: 0,
+                  lineHeight: 1.3,
                   display: '-webkit-box',
                   WebkitLineClamp: 2,
                   WebkitBoxOrient: 'vertical',
@@ -273,10 +275,11 @@ export default function CategorySelector({
 
               {/* Bottom mini progress bar */}
               <div style={{
-                height: 4,
+                height: 3,
                 borderRadius: 99,
                 background: 'var(--bg-subtle)',
                 overflow: 'hidden',
+                marginTop: 'auto',
               }}>
                 <div style={{
                   height: '100%',

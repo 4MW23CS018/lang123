@@ -20,12 +20,13 @@ COPY --chown=user:user . .
 
 USER user
 
-# Hugging Face Spaces listens on port 7860
-ENV PORT=7860
+# Production web server configuration (Render, HuggingFace, Railway, Docker)
+ENV PORT=10000
 ENV APP_ENV=production
 ENV WHISPER_MODEL=small
-EXPOSE 7860
+ENV WHISPER_THREADS=4
+EXPOSE 10000
 
-CMD ["gunicorn", "--bind", "0.0.0.0:7860", "--workers", "1", "--threads", "4", "--timeout", "120", "main:app"]
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-10000} --workers 1 --threads 4 --timeout 180 main:app"]
 
 

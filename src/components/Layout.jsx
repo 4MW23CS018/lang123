@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import LanguageSwitcher from './layout/LanguageSwitcher';
+import { useLanguage, SOUTH_INDIAN_LANGUAGES } from './hooks/useLanguage';
 import SideNav from './layout/SideNav';
 import { useTheme } from './hooks/useTheme';
 import { usePWAInstall } from '../hooks/usePWAInstall';
@@ -31,16 +32,28 @@ export default function Layout({ children }) {
   const loc = useLocation();
   const navigate = useNavigate();
   const { isDark, toggle } = useTheme();
+  const { current: currentLang, setLanguage } = useLanguage();
   const { isInstalled, promptInstall } = usePWAInstall();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const userId = localStorage.getItem('userId');
   const user = useQuery(api.users.get, userId ? { userId } : "skip");
 
-  // Close drawer on route change
+  // Close drawer and reset scroll lock on route change
   useEffect(() => {
     setDrawerOpen(false);
+    document.body.style.overflow = '';
   }, [loc.pathname]);
+
+  // Handle browser back / forward gestures & hardware back buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      setDrawerOpen(false);
+      document.body.style.overflow = '';
+    };
+    window.addEventListener('popstate', handlePopState, { passive: true });
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Lock body scroll when mobile drawer is open
   useEffect(() => {
@@ -543,10 +556,59 @@ export default function Layout({ children }) {
                     Preferences
                   </p>
 
-                  {/* Language Selector container */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 12px', background: 'var(--bg-elevated)', borderRadius: 12, border: '1px solid var(--border-default)' }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Language</span>
-                    <LanguageSwitcher />
+                  {/* Mobile 1-Tap Language Selector Grid */}
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8,
+                    padding: '10px 12px',
+                    background: 'var(--bg-elevated)',
+                    borderRadius: 14,
+                    border: '1px solid var(--border-default)',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: 11, fontWeight: 750, textTransform: 'uppercase', letterSpacing: '0.6px', color: 'var(--text-muted)' }}>
+                        Language
+                      </span>
+                      <span style={{ fontSize: 11.5, fontWeight: 700, color: currentLang.color }}>
+                        {currentLang.emoji} {currentLang.label} ({currentLang.script})
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+                      {SOUTH_INDIAN_LANGUAGES.map((lang) => {
+                        const isSelected = lang.label === currentLang.label;
+                        return (
+                          <button
+                            key={lang.code}
+                            type="button"
+                            onClick={() => setLanguage(lang.label)}
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              padding: '8px 4px',
+                              borderRadius: 10,
+                              border: isSelected ? `2px solid ${lang.color}` : '1px solid var(--border-subtle)',
+                              background: isSelected ? `${lang.color}18` : 'var(--bg-card)',
+                              color: isSelected ? lang.color : 'var(--text-primary)',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                              boxShadow: isSelected ? `0 2px 8px ${lang.color}25` : 'none',
+                            }}
+                          >
+                            <span style={{ fontSize: 14, lineHeight: 1 }}>{lang.emoji}</span>
+                            <span style={{ fontSize: 11.5, fontWeight: isSelected ? 800 : 600, marginTop: 3 }}>
+                              {lang.label}
+                            </span>
+                            <span style={{ fontSize: 9.5, opacity: 0.75, color: isSelected ? lang.color : 'var(--text-muted)' }}>
+                              {lang.script}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   {/* Theme Toggle row */}

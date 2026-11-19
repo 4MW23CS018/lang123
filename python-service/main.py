@@ -290,6 +290,7 @@ def text_to_speech():
 
 @app.route('/', methods=['GET', 'OPTIONS'])
 @app.route('/health', methods=['GET', 'OPTIONS'])
+@app.route('/healthz', methods=['GET', 'OPTIONS'])
 def health():
     if request.method == 'OPTIONS':
         return ('', 204)
