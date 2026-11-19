@@ -1,5 +1,5 @@
 // public/sw.js - LangBridge PWA Service Worker
-const CACHE_NAME = 'langbridge-cache-v1';
+const CACHE_NAME = 'langbridge-cache-v2';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
@@ -55,6 +55,7 @@ self.addEventListener('fetch', (event) => {
     url.pathname.startsWith('/api/') ||
     url.port === '5000' ||
     url.hostname.includes('loca.lt') ||
+    url.hostname.includes('trycloudflare.com') ||
     url.hostname.includes('ngrok')
   ) {
     return;
