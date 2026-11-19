@@ -156,10 +156,12 @@ def transcribe(audio_path, language_name=None, phrase="", phonetics=""):
     # Fast, high-throughput decoding configuration for low-CPU cloud instances
     kwargs = {
         "task": "transcribe",
-        "beam_size": 1,          # Greedy decoding: 4-5x faster than beam_size=5, avoids high CPU load
-        "vad_filter": False,     # Audio is already cleaned & trimmed by audio_preprocessor
+        "beam_size": 1,              # Greedy decoding: 4-5x faster than beam_size=5, avoids high CPU load
+        "without_timestamps": True,  # Skips cross-attention timestamp calculations (30% speedup)
+        "max_new_tokens": 45,        # Caps decoding to short phrase length, stops runaway silence decoding
+        "vad_filter": False,         # Audio is already cleaned & trimmed by audio_preprocessor
         "condition_on_previous_text": False,
-        "temperature": 0.0,
+        "temperature": 0.0,          # Single-pass greedy decoding, never retries multi-temperatures
         "no_speech_threshold": 0.6,
         "compression_ratio_threshold": 2.2,
         "repetition_penalty": 1.25,
