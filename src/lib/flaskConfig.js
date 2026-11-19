@@ -60,7 +60,10 @@ export async function testFlaskConnection(targetUrl) {
     const timeoutId = setTimeout(() => controller.abort(), 6000);
     const res = await fetch(`${url}/health`, {
       method: "GET",
-      headers: { "Bypass-Tunnel-Reminder": "true" },
+      headers: { 
+        "Bypass-Tunnel-Reminder": "true",
+        "ngrok-skip-browser-warning": "true"
+      },
       signal: controller.signal,
     });
     clearTimeout(timeoutId);

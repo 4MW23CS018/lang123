@@ -155,7 +155,10 @@ export default function Profile() {
     const targetUrl = (serverUrlInput || getFlaskUrl()).replace(/\/$/, "");
     try {
       const res = await fetch(`${targetUrl}/health`, {
-        headers: { "Bypass-Tunnel-Reminder": "true" }
+        headers: { 
+          "Bypass-Tunnel-Reminder": "true",
+          "ngrok-skip-browser-warning": "true"
+        }
       });
       if (res.ok) {
         setServerStatusResult({ ok: true, msg: "Connected successfully! Server is online and responding." });

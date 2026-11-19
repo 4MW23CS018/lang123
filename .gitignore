@@ -44,4 +44,6 @@ python-service/.vercel-test-deps/
 # Scratch & generated QR assets
 scratch/
 public/langbridge-qr*.png
+ngrok.exe
+ngrok.yml
 

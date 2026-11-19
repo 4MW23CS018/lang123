@@ -65,7 +65,11 @@ export default function Roleplay() {
     try {
       const res = await fetch(`${flaskUrl}/tts`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Bypass-Tunnel-Reminder": "true" },
+        headers: { 
+          "Content-Type": "application/json", 
+          "Bypass-Tunnel-Reminder": "true",
+          "ngrok-skip-browser-warning": "true"
+        },
         body: JSON.stringify({ phrase: text, language })
       });
       if (!res.ok) return;
@@ -165,7 +169,8 @@ export default function Roleplay() {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
-                "Bypass-Tunnel-Reminder": "true"
+                "Bypass-Tunnel-Reminder": "true",
+                "ngrok-skip-browser-warning": "true"
               },
               body: JSON.stringify({
                 audio_base64: b64,

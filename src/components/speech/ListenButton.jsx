@@ -70,7 +70,11 @@ export default function ListenButton({ phrase, displayPhrase, language, size = 4
         const flaskUrl = getFlaskUrl();
         const res = await fetch(`${flaskUrl}/tts`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", "Bypass-Tunnel-Reminder": "true" },
+          headers: { 
+            "Content-Type": "application/json", 
+            "Bypass-Tunnel-Reminder": "true",
+            "ngrok-skip-browser-warning": "true"
+          },
           body: JSON.stringify({ phrase: phraseToSpeak, language }),
         });
 

@@ -126,7 +126,11 @@ export async function startRecording({
       try {
         const response = await fetch(`${FLASK_BASE_URL}/transcribe`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", "Bypass-Tunnel-Reminder": "true" },
+          headers: { 
+            "Content-Type": "application/json", 
+            "Bypass-Tunnel-Reminder": "true",
+            "ngrok-skip-browser-warning": "true" 
+          },
           body: JSON.stringify({
             audio_base64: base64Data,
             language: language.toLowerCase()
