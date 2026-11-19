@@ -3,4 +3,6 @@ __pycache__/
 *.pyc
 .env
 *.mp3
+test*.py
+.git/
 
