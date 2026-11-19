@@ -1260,3 +1260,90 @@ select {
   animation: shake-anim 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
+/* ── Auth Pages Responsive Layout (Login / Signup) ── */
+.auth-page-container {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  background: var(--bg-base);
+  width: 100%;
+}
+
+.auth-branding-panel {
+  flex: 0 0 44%;
+  background: var(--bg-card);
+  border-right: 1px solid var(--border-subtle);
+  padding: 60px 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-branding-panel.signup-gradient {
+  background: linear-gradient(160deg, #7c3aed, #4f46e5);
+}
+
+.auth-form-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  box-sizing: border-box;
+}
+
+.auth-form-card {
+  width: 100%;
+  max-width: 400px;
+  animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.auth-mobile-header {
+  display: none;
+}
+
+.auth-desktop-header {
+  display: block;
+}
+
+@media (max-width: 860px) {
+  .auth-page-container {
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .auth-branding-panel {
+    display: none !important;
+  }
+
+  .auth-form-panel {
+    flex: 1;
+    width: 100%;
+    max-width: 100%;
+    padding: 36px 20px 48px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .auth-form-card {
+    max-width: 420px;
+    margin: 0 auto;
+  }
+
+  .auth-mobile-header {
+    display: block;
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  .auth-desktop-header {
+    display: none;
+  }
+}
+
+

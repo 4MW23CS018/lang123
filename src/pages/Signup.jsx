@@ -54,31 +54,22 @@ export default function Signup() {
 
   const inputStyle = (field) => ({
     width: '100%',
-    padding: '13px 16px',
+    padding: '14px 16px',
     boxSizing: 'border-box',
     background: 'var(--bg-input)',
     border: `1.5px solid ${focused === field ? 'var(--purple)' : 'var(--border-default)'}`,
     borderRadius: 12,
     color: 'var(--text-primary)',
-    fontSize: 15,
+    fontSize: 16, // 16px prevents iOS Safari auto-zoom
     outline: 'none',
     transition: 'border-color 0.2s, box-shadow 0.2s',
     boxShadow: focused === field ? '0 0 0 3px rgba(139,92,246,0.1)' : 'none',
   });
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', background: 'var(--bg-base)' }}>
-      {/* Left branding panel */}
-      <div style={{
-        flex: '0 0 44%',
-        background: 'linear-gradient(160deg, #7c3aed, #4f46e5)',
-        padding: '60px 48px',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        position: 'relative',
-        overflow: 'hidden',
-      }}>
+    <div className="auth-page-container">
+      {/* Left branding panel (Desktop Only) */}
+      <div className="auth-branding-panel signup-gradient">
         <div style={{ position: 'absolute', bottom: '10%', left: '-10%', width: 350, height: 350, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
         <div style={{ position: 'relative', zIndex: 1 }}>
           <span style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>Lang<span style={{ opacity: 0.7 }}>Bridge</span></span>
@@ -96,11 +87,27 @@ export default function Signup() {
         </div>
       </div>
 
-      {/* Right form panel */}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40 }}>
-        <div style={{ width: '100%', maxWidth: 400, animation: 'fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) both' }}>
-          <h2 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px', letterSpacing: '-0.5px' }}>Create Account</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: 14, margin: '0 0 24px' }}>Start learning in under 3 minutes.</p>
+      {/* Right form panel (Full width on Mobile) */}
+      <div className="auth-form-panel">
+        <div className="auth-form-card">
+          {/* Mobile Header with App Branding */}
+          <div className="auth-mobile-header">
+            <span style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)' }}>
+              Lang<span style={{ color: 'var(--purple)' }}>Bridge</span>
+            </span>
+            <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', margin: '14px 0 6px', letterSpacing: '-0.5px' }}>
+              Create Account
+            </h1>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 13.5, margin: 0 }}>
+              Start your language journey in under 3 minutes.
+            </p>
+          </div>
+
+          {/* Desktop Header */}
+          <div className="auth-desktop-header">
+            <h2 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px', letterSpacing: '-0.5px' }}>Create Account</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, margin: '0 0 24px' }}>Start learning in under 3 minutes.</p>
+          </div>
 
           {error && (
             <div style={{
@@ -167,7 +174,7 @@ export default function Signup() {
                     padding: '8px 12px',
                     background: 'var(--bg-elevated)',
                     border: '1px solid var(--border-default)',
-                    color: 'var(--text-primary)',
+                    color: 'var(--text-secondary)',
                     borderRadius: 8,
                     fontSize: 12.5,
                     fontWeight: 600,
@@ -194,6 +201,8 @@ export default function Signup() {
                 required
                 onFocus={() => setFocused('name')}
                 onBlur={() => setFocused('')}
+                autoCapitalize="none"
+                autoCorrect="off"
               />
             </div>
             <div style={{ marginBottom: 24 }}>
@@ -214,7 +223,8 @@ export default function Signup() {
               disabled={loading}
               style={{
                 width: '100%',
-                padding: 14,
+                padding: '14px',
+                minHeight: '48px',
                 background: loading ? 'var(--text-muted)' : 'var(--purple)',
                 border: 'none',
                 borderRadius: 12,
