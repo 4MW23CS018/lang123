@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import SpeechRecorder from "../components/speech/SpeechRecorder";
@@ -7,6 +7,7 @@ import { personalizePhrase, RAW_CURRICULUM_BY_LANG } from "../data/treeCurriculu
 
 export default function Practice() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
   const user = useQuery(api.users.get, userId ? { userId } : "skip");
   const storedUserName = localStorage.getItem("userName");
@@ -17,6 +18,15 @@ export default function Practice() {
   
   // 0 to 100
   const [progress, setProgress] = useState(0);
+
+  // Close practice on Escape key
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === "Escape") navigate("/lessons");
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [navigate]);
 
   // Look up canonical static curriculum definition by nodeKey or phrase
   const staticMatch = useMemo(() => {

@@ -246,30 +246,7 @@ def text_to_speech():
     if not cleaned_phrase:
         cleaned_phrase = phrase
 
-    # 1. Primary: Use gemini-3.8-flash-lite-tts
-    try:
-        from pronunciation import client
-        if client:
-            resp = client.models.generate_content(
-                model='gemini-3.8-flash-lite-tts',
-                contents=cleaned_phrase,
-            )
-            if resp.candidates and resp.candidates[0].content.parts:
-                part = resp.candidates[0].content.parts[0]
-                if hasattr(part, 'inline_data') and part.inline_data and part.inline_data.data:
-                    audio_buffer = io.BytesIO(part.inline_data.data)
-                    mime_type = part.inline_data.mime_type or 'audio/wav'
-                    download_ext = 'wav' if 'wav' in mime_type else 'mp3'
-                    return send_file(
-                        audio_buffer,
-                        mimetype=mime_type,
-                        as_attachment=False,
-                        download_name=f'pronunciation.{download_ext}'
-                    )
-    except Exception as gemini_err:
-        print(f"[TTS WARN] gemini-3.8-flash-lite-tts failed, falling back to gTTS: {gemini_err}")
-
-    # 2. Fallback: gTTS
+    # Primary: Fast, high-quality native TTS via gTTS
     lang_code = LANGUAGE_CODES.get(language, language[:2])
 
     try:
@@ -283,6 +260,9 @@ def text_to_speech():
             as_attachment=False,
             download_name='pronunciation.mp3'
         )
+    except Exception as e:
+        print(f"[TTS ERROR] gTTS generation failed: {e}")
+        return jsonify({'error': str(e)}), 500
     except Exception as e:
         print(f"[TTS ERROR] {e}")
         return jsonify({'error': str(e)}), 500

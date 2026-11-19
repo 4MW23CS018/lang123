@@ -32,33 +32,94 @@ export default function LanguageSwitcher() {
 
       {open && (
         <div style={{
-          position: "absolute", top: "calc(100% + 6px)", right: 0,
-          background: "var(--bg-card)", border: "1px solid var(--border-default)",
-          borderRadius: 14, padding: 6, width: 210, zIndex: 1000,
-          boxShadow: "var(--card-shadow-hover)",
+          position: "absolute",
+          top: "calc(100% + 8px)",
+          right: 0,
+          background: "var(--bg-card)",
+          border: "1px solid var(--border-default)",
+          borderRadius: 16,
+          padding: "10px 12px 12px",
+          width: "min(calc(100vw - 32px), 290px)",
+          zIndex: 1000,
+          boxShadow: "var(--card-shadow-hover), 0 12px 36px rgba(0,0,0,0.2)",
           animation: "dropIn 0.2s cubic-bezier(0.16,1,0.3,1) both",
         }}>
-          <p style={{ color: "var(--text-muted)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", padding: "6px 10px 4px", margin: 0 }}>Switch Language</p>
-          {SOUTH_INDIAN_LANGUAGES.map(lang => {
-            const isActive = lang.label === current.label;
-            return (
-              <button key={lang.code} onClick={() => { setLanguage(lang.label); setOpen(false); }}
-                style={{
-                  display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 10px", border: "none",
-                  background: isActive ? lang.color + "15" : "transparent",
-                  borderRadius: 9, cursor: "pointer", transition: "background 0.12s", textAlign: "left",
-                }}
-                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "var(--bg-elevated)"; }}
-                onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}>
-                <span style={{ fontSize: 15 }}>{lang.emoji}</span>
-                <div style={{ flex: 1 }}>
-                  <p style={{ color: isActive ? lang.color : "var(--text-primary)", fontSize: 13, fontWeight: isActive ? 700 : 500, margin: 0 }}>{lang.label}</p>
-                  <p style={{ color: "var(--text-muted)", fontSize: 11, margin: 0 }}>{lang.script}</p>
-                </div>
-                {isActive && <span style={{ color: lang.color, fontSize: 14 }}>✓</span>}
-              </button>
-            );
-          })}
+          <p style={{
+            color: "var(--text-muted)",
+            fontSize: 10.5,
+            fontWeight: 750,
+            textTransform: "uppercase",
+            letterSpacing: "1px",
+            padding: "2px 4px 8px",
+            margin: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}>
+            <span>Switch Language</span>
+            <span style={{ fontSize: 11, color: current.color, fontWeight: 700 }}>
+              {current.emoji} {current.label}
+            </span>
+          </p>
+
+          {/* 2-column grid: all 6 languages visible instantly without vertical scrolling */}
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(2, 1fr)",
+            gap: 6,
+          }}>
+            {SOUTH_INDIAN_LANGUAGES.map(lang => {
+              const isActive = lang.label === current.label;
+              return (
+                <button
+                  key={lang.code}
+                  type="button"
+                  onClick={() => { setLanguage(lang.label); setOpen(false); }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "8px 9px",
+                    border: isActive ? `1.5px solid ${lang.color}` : "1px solid var(--border-subtle)",
+                    background: isActive ? `${lang.color}18` : "var(--bg-elevated)",
+                    borderRadius: 10,
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                    textAlign: "left",
+                    boxShadow: isActive ? `0 2px 8px ${lang.color}25` : "none",
+                  }}
+                  onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "var(--bg-card)"; }}
+                  onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "var(--bg-elevated)"; }}
+                >
+                  <span style={{ fontSize: 16, flexShrink: 0 }}>{lang.emoji}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{
+                      color: isActive ? lang.color : "var(--text-primary)",
+                      fontSize: 12.5,
+                      fontWeight: isActive ? 800 : 600,
+                      margin: 0,
+                      lineHeight: 1.2,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}>
+                      {lang.label}
+                    </p>
+                    <p style={{
+                      color: isActive ? lang.color : "var(--text-muted)",
+                      fontSize: 10.5,
+                      margin: "2px 0 0",
+                      opacity: 0.8,
+                      lineHeight: 1,
+                    }}>
+                      {lang.script}
+                    </p>
+                  </div>
+                  {isActive && <span style={{ color: lang.color, fontSize: 12, fontWeight: 800 }}>✓</span>}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

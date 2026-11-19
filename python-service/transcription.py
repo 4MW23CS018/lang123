@@ -8,7 +8,8 @@ from collections import Counter
 # whereas 'base' frequently collapses into numeric or repetition hallucinations on Kannada.
 # CPU threads for Whisper inference: 4 threads for faster parallelized speech assessment
 cpu_threads = int(os.environ.get("WHISPER_THREADS", 4))
-MODEL_NAME = os.environ.get("WHISPER_MODEL", "small")
+# Default to 'base' model for low-latency inference on cloud instances (512MB RAM)
+MODEL_NAME = os.environ.get("WHISPER_MODEL", "base")
 print(f"[WHISPER] Loading local Whisper model '{MODEL_NAME}' with {cpu_threads} CPU threads...")
 try:
     model = WhisperModel(MODEL_NAME, device="cpu", compute_type="int8", cpu_threads=cpu_threads)
@@ -152,15 +153,11 @@ def transcribe(audio_path, language_name=None, phrase="", phonetics=""):
 
     initial_prompt = ", ".join(prompt_parts) if prompt_parts else None
 
+    # Fast, high-throughput decoding configuration for low-CPU cloud instances
     kwargs = {
         "task": "transcribe",
-        "beam_size": 5,
-        "vad_filter": True,
-        "vad_parameters": dict(
-            threshold=0.5,
-            min_silence_duration_ms=400,
-            speech_pad_ms=200,
-        ),
+        "beam_size": 1,          # Greedy decoding: 4-5x faster than beam_size=5, avoids high CPU load
+        "vad_filter": False,     # Audio is already cleaned & trimmed by audio_preprocessor
         "condition_on_previous_text": False,
         "temperature": 0.0,
         "no_speech_threshold": 0.6,

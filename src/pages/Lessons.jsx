@@ -71,6 +71,22 @@ export default function Lessons() {
     }
   }, [selectedCategoryId, currentCategoryTree]);
 
+  // Handle browser back gesture / button & Escape key to close open details panel smoothly without freezing
+  useEffect(() => {
+    const handlePopState = () => {
+      setIsDetailsOpen(false);
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") setIsDetailsOpen(false);
+    };
+    window.addEventListener("popstate", handlePopState, { passive: true });
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   // Node Click Handler
   const handleNodeClick = (node) => {
     setSelectedNode(node);

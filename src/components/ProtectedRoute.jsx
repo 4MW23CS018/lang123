@@ -10,6 +10,10 @@ export default function ProtectedRoute({ children }) {
 
   if (!userId) return <Navigate to="/login" state={{ from: location }} replace />;
   if (user === undefined) return <div className="container">Loading...</div>; // still fetching
+  if (user === null) {
+    localStorage.removeItem('userId');
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
 
   // If onboarding not completed and we're not already on onboarding page
   if (!user.onboardingCompleted && location.pathname !== '/onboarding') {

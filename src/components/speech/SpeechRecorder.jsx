@@ -39,6 +39,7 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
   const [audioBlob, setAudioBlob] = useState(null);
   const [feedback, setFeedback] = useState(null);
   const [processing, setProcessing] = useState(false);
+  const [processingStage, setProcessingStage] = useState("");
   const [showConfig, setShowConfig] = useState(false);
   const [configUrl, setConfigUrl] = useState(getFlaskUrl());
   const [testResult, setTestResult] = useState(null);
@@ -73,6 +74,23 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
 
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
+  const abortControllerRef = useRef(null);
+  const [audioUrl, setAudioUrl] = useState(null);
+
+  // Manage object URL for recorded audio preview
+  useEffect(() => {
+    if (!audioBlob) {
+      setAudioUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(audioBlob);
+    setAudioUrl(url);
+    return () => {
+      try {
+        URL.revokeObjectURL(url);
+      } catch {}
+    };
+  }, [audioBlob]);
 
   // Gracefully release microphone and media recorder on route change or back navigation
   useEffect(() => {
@@ -85,6 +103,11 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
         } catch {}
         try {
           mediaRecorderRef.current.stream?.getTracks().forEach((t) => t.stop());
+        } catch {}
+      }
+      if (abortControllerRef.current) {
+        try {
+          abortControllerRef.current.abort();
         } catch {}
       }
     };
@@ -114,6 +137,18 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
   const submit = async () => {
     if (!audioBlob) return;
     setProcessing(true);
+    setProcessingStage("Connecting to speech engine…");
+    const stageTimer1 = setTimeout(() => {
+      setProcessingStage("Waking up cloud engine (cold start)… ⚡");
+    }, 4500);
+    const stageTimer2 = setTimeout(() => {
+      setProcessingStage("Transcribing audio with Faster-Whisper…");
+    }, 18000);
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const timeoutId = setTimeout(() => controller.abort(), 55000);
+
     try {
       const base64 = await new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -144,13 +179,19 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
           phonetics: effectivePhonetics || cleanPhonetics,
           language
         }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
+      clearTimeout(stageTimer1);
+      clearTimeout(stageTimer2);
 
       if (!flaskResponse.ok) {
         const errorText = await flaskResponse.text();
         throw new Error(`Flask error: ${flaskResponse.status} - ${errorText}`);
       }
 
+      setProcessingStage("Evaluating pronunciation accuracy…");
       const assessment = await flaskResponse.json();
       const { xpEarned } = await saveAssessment({
         userId, lessonId,
@@ -161,8 +202,13 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
 
       setFeedback({ ...assessment, xpEarned, phonetics: cleanPhonetics });
     } catch (err) {
+      clearTimeout(timeoutId);
+      clearTimeout(stageTimer1);
+      clearTimeout(stageTimer2);
       console.error("FAILED:", err);
+      const isTimeout = err.name === "AbortError";
       const isNetwork =
+        isTimeout ||
         err.name === "TypeError" ||
         err.message?.includes("fetch") ||
         err.message?.includes("Failed to fetch") ||
@@ -173,7 +219,9 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
       if (isNetwork) {
         setConnectionError({
           url: getFlaskUrl(),
-          message: "Speech backend is offline or unreachable (503 Tunnel Unavailable). Please update your active tunnel URL or switch to local."
+          message: isTimeout
+            ? "Cloud speech engine took over 50s to wake up (Render cold start). It is active now — please tap below to retry!"
+            : "Speech backend is offline or waking up. Please verify your connection or tap below to retry."
         });
         setConfigUrl(getFlaskUrl());
         setShowConfig(true);
@@ -182,6 +230,7 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
       }
     } finally {
       setProcessing(false);
+      setProcessingStage("");
     }
   };
 
@@ -586,7 +635,7 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
         }}>
           <div>
             <p style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 8px' }}>Your recording</p>
-            <audio src={URL.createObjectURL(audioBlob)} controls style={{ width: '100%', height: '44px', borderRadius: '8px' }} />
+            <audio src={audioUrl || ""} controls style={{ width: '100%', height: '44px', borderRadius: '8px' }} />
           </div>
           <button
             onClick={submit}
@@ -606,7 +655,7 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
             {processing ? (
               <>
                 <div style={{ width: '16px', height: '16px', border: '2px solid rgba(0,0,0,0.2)', borderTop: '2px solid #000', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                Analyzing Pronunciation…
+                <span>{processingStage || "Analyzing Pronunciation…"}</span>
               </>
             ) : (
               <>✨ Check Pronunciation →</>

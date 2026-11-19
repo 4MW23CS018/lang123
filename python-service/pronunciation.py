@@ -200,7 +200,7 @@ def get_ai_tip(expected, transcription, word_breakdown, language, deterministic_
     """
     fallback_tip = deterministic_tip or build_deterministic_tip(expected, transcription, word_breakdown, language)
 
-    if not client:
+    if not os.environ.get("GEMINI_API_KEY") or not client:
         return fallback_tip
 
     mistakes = [w for w in word_breakdown if w.get('status') != 'correct']
@@ -221,7 +221,7 @@ Mistakes: {mistakes_str}
 
 Give a 1-sentence tip encouraging them and explaining clearly what they said vs what was missed (e.g. if they only said part of the word/phrase). Be direct, concise, and friendly."""
 
-    for model_name in ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-3.5-flash-lite']:
+    for model_name in ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.0-flash-lite']:
         try:
             response = client.models.generate_content(
                 model=model_name,
@@ -232,6 +232,7 @@ Give a 1-sentence tip encouraging them and explaining clearly what they said vs 
         except Exception as e:
             safe_e = str(e).encode('ascii', 'backslashreplace').decode('ascii')
             print(f"[AI TIP NOTICE] Model {model_name} failed: {safe_e}")
+            break # Avoid waiting for multiple failed API calls, fallback immediately
 
     return fallback_tip
 

@@ -158,24 +158,24 @@ export default function CategorySelector({
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelectCategory(cat.id); }}
               style={{
                 flex: '0 0 auto',
-                width: 195,
-                borderRadius: 14,
-                padding: '11px 13px',
+                width: 215,
+                borderRadius: 16,
+                padding: '14px 15px',
                 cursor: 'pointer',
                 background: isSelected ? 'var(--bg-card)' : 'var(--bg-elevated)',
                 border: isSelected
                   ? `2px solid ${catColor}`
                   : '1px solid var(--border-subtle)',
                 boxShadow: isSelected
-                  ? `0 4px 16px ${catColor}25, 0 0 0 1px ${catColor}44`
+                  ? `0 4px 18px ${catColor}25, 0 0 0 1px ${catColor}44`
                   : 'var(--card-shadow)',
                 transform: isSelected ? 'translateY(-2px)' : 'none',
                 transition: 'all 0.2s var(--ease-out)',
                 position: 'relative',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 5,
-                minHeight: 124,
+                gap: 8,
+                minHeight: 138,
               }}
               onMouseEnter={(e) => {
                 if (!isSelected) {
@@ -275,11 +275,11 @@ export default function CategorySelector({
 
               {/* Bottom mini progress bar */}
               <div style={{
-                height: 3,
+                height: 4,
                 borderRadius: 99,
                 background: 'var(--bg-subtle)',
                 overflow: 'hidden',
-                marginTop: 'auto',
+                marginTop: 10,
               }}>
                 <div style={{
                   height: '100%',
