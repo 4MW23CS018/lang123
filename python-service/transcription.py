@@ -8,8 +8,7 @@ from collections import Counter
 # whereas 'base' frequently collapses into numeric or repetition hallucinations on Kannada.
 # CPU threads for Whisper inference: 8 threads for faster parallelized speech assessment
 cpu_threads = int(os.environ.get("WHISPER_THREADS", 8))
-# Default to 'base' model for accurate multilingual Indic phonetic modeling (~0.7s on 8 CPU threads)
-MODEL_NAME = os.environ.get("WHISPER_MODEL", "base")
+MODEL_NAME = os.environ.get("WHISPER_MODEL", "small")
 print(f"[WHISPER] Loading local Whisper model '{MODEL_NAME}' with {cpu_threads} CPU threads...")
 try:
     model = WhisperModel(MODEL_NAME, device="cpu", compute_type="int8", cpu_threads=cpu_threads)
@@ -139,22 +138,31 @@ def transcribe(audio_path, language_name=None, phrase="", phonetics=""):
         f"audio_file_size={audio_size} bytes"
     )
 
-    # For genuine unbiased speech evaluation:
-    # Do NOT pass initial_prompt! Biasing Whisper with prompts (or target phrases)
-    # causes the autoregressive decoder to hallucinate prompt words even when
-    # the user speaks incorrect words or gibberish.
-    # Passing the exact ISO language code (e.g. 'kn', 'ta', 'te', 'ml') guarantees
-    # the correct native script without biasing word selection.
+    # In pronunciation assessment mode, a reference phrase is provided.
+    # In open roleplay mode, use conversational vocabulary prompt for target language.
+    prompt_parts = []
+    if phrase and phrase.strip():
+        prompt_parts.append(phrase.strip())
+    if phonetics and phonetics.strip():
+        prompt_parts.append(phonetics.strip())
+    if not prompt_parts:
+        default_prompt = CONVERSATIONAL_PROMPTS.get(language_name)
+        if default_prompt:
+            prompt_parts.append(default_prompt)
 
-    # Fast, high-throughput decoding configuration for low-CPU cloud instances
+    initial_prompt = ", ".join(prompt_parts) if prompt_parts else None
+
     kwargs = {
         "task": "transcribe",
-        "beam_size": 1,              # Greedy decoding: 4-5x faster than beam_size=5, avoids high CPU load
-        "without_timestamps": True,  # Skips cross-attention timestamp calculations (30% speedup)
-        "max_new_tokens": 45,        # Caps decoding to short phrase length, stops runaway silence decoding
-        "vad_filter": False,         # Audio is already cleaned & trimmed by audio_preprocessor
+        "beam_size": 5,
+        "vad_filter": True,
+        "vad_parameters": dict(
+            threshold=0.5,
+            min_silence_duration_ms=400,
+            speech_pad_ms=200,
+        ),
         "condition_on_previous_text": False,
-        "temperature": 0.0,          # Single-pass greedy decoding, never retries multi-temperatures
+        "temperature": 0.0,
         "no_speech_threshold": 0.6,
         "compression_ratio_threshold": 2.2,
         "repetition_penalty": 1.25,
@@ -164,6 +172,9 @@ def transcribe(audio_path, language_name=None, phrase="", phonetics=""):
 
     if lang_code:
         kwargs["language"] = lang_code
+
+    if initial_prompt:
+        kwargs["initial_prompt"] = initial_prompt
 
     segments, info = model.transcribe(audio_path, **kwargs)
     segments = list(segments)
