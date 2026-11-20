@@ -17,7 +17,7 @@ export function getFlaskUrl() {
   if (typeof window !== "undefined") {
     const override = localStorage.getItem("FLASK_URL");
     if (override && override.trim()) {
-      const clean = override.trim().replace(/\/$/, "");
+      const clean = override.trim().replace(/[/\\]+$/, "");
 
       // If user specifically picked Render or Cloudflare or a custom URL, respect it
       if (clean === ACTIVE_RENDER_URL || clean === ACTIVE_CLOUDFLARE_URL) {
@@ -39,7 +39,7 @@ export function getFlaskUrl() {
   }
 
   // If environment variable explicitly specifies a non-render custom url, use it; otherwise ALWAYS default to Ngrok as primary!
-  const envUrl = (import.meta.env.VITE_FLASK_URL || "").trim().replace(/\/$/, "");
+  const envUrl = (import.meta.env.VITE_FLASK_URL || "").trim().replace(/[/\\]+$/, "");
   if (envUrl && !envUrl.includes("onrender.com") && !envUrl.includes("127.0.0.1")) {
     return envUrl;
   }
@@ -54,7 +54,7 @@ export function setFlaskUrl(url) {
       console.log("[flaskConfig] Using primary URL:", PRIMARY_SERVER_URL);
       return PRIMARY_SERVER_URL;
     } else {
-      const cleanUrl = url.trim().replace(/\/$/, "");
+      const cleanUrl = url.trim().replace(/[/\\]+$/, "");
       localStorage.setItem("FLASK_URL", cleanUrl);
       console.log("[flaskConfig] Updated Flask URL override to:", cleanUrl);
       return cleanUrl;
@@ -64,7 +64,7 @@ export function setFlaskUrl(url) {
 }
 
 export async function testFlaskConnection(targetUrl) {
-  const url = (targetUrl || getFlaskUrl()).replace(/\/$/, "");
+  const url = (targetUrl || getFlaskUrl()).replace(/[/\\]+$/, "");
   const start = Date.now();
   try {
     const controller = new AbortController();

@@ -222,7 +222,7 @@ Mistakes: {mistakes_str}
 
 Give a 1-sentence tip encouraging them and explaining clearly what they said vs what was missed (e.g. if they only said part of the word/phrase). Be direct, concise, and friendly."""
 
-    for model_name in ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.0-flash-lite']:
+    for model_name in ['gemini-3.5-flash-lite', 'gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-2.5-flash-lite']:
         try:
             response = client.models.generate_content(
                 model=model_name,
@@ -233,7 +233,7 @@ Give a 1-sentence tip encouraging them and explaining clearly what they said vs 
         except Exception as e:
             safe_e = str(e).encode('ascii', 'backslashreplace').decode('ascii')
             print(f"[AI TIP NOTICE] Model {model_name} failed: {safe_e}")
-            break # Avoid waiting for multiple failed API calls, fallback immediately
+            continue
 
     return fallback_tip
 

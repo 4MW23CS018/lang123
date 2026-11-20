@@ -8,8 +8,8 @@ from collections import Counter
 # whereas 'base' frequently collapses into numeric or repetition hallucinations on Kannada.
 # CPU threads for Whisper inference: 8 threads for faster parallelized speech assessment
 cpu_threads = int(os.environ.get("WHISPER_THREADS", 8))
-# Default to 'tiny' model for ultra-low-latency inference on cloud instances (39MB, ~0.3s)
-MODEL_NAME = os.environ.get("WHISPER_MODEL", "tiny")
+# Default to 'base' model for accurate multilingual Indic phonetic modeling (~0.7s on 8 CPU threads)
+MODEL_NAME = os.environ.get("WHISPER_MODEL", "base")
 print(f"[WHISPER] Loading local Whisper model '{MODEL_NAME}' with {cpu_threads} CPU threads...")
 try:
     model = WhisperModel(MODEL_NAME, device="cpu", compute_type="int8", cpu_threads=cpu_threads)
@@ -139,11 +139,12 @@ def transcribe(audio_path, language_name=None, phrase="", phonetics=""):
         f"audio_file_size={audio_size} bytes"
     )
 
-    # For genuine speech evaluation, do NOT prime Whisper with the target phrase!
-    # Priming Whisper with the expected phrase biases the decoder into outputting
-    # the target phrase even when the user speaks completely wrong words or gibberish.
-    # Provide only general conversational vocabulary hints for the target language script.
-    initial_prompt = CONVERSATIONAL_PROMPTS.get(language_name)
+    # For genuine unbiased speech evaluation:
+    # Do NOT pass initial_prompt! Biasing Whisper with prompts (or target phrases)
+    # causes the autoregressive decoder to hallucinate prompt words even when
+    # the user speaks incorrect words or gibberish.
+    # Passing the exact ISO language code (e.g. 'kn', 'ta', 'te', 'ml') guarantees
+    # the correct native script without biasing word selection.
 
     # Fast, high-throughput decoding configuration for low-CPU cloud instances
     kwargs = {
@@ -163,9 +164,6 @@ def transcribe(audio_path, language_name=None, phrase="", phonetics=""):
 
     if lang_code:
         kwargs["language"] = lang_code
-
-    if initial_prompt:
-        kwargs["initial_prompt"] = initial_prompt
 
     segments, info = model.transcribe(audio_path, **kwargs)
     segments = list(segments)

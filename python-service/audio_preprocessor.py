@@ -144,12 +144,12 @@ def preprocess(input_path, output_path=None):
         else:
             print(f"[PREPROCESS] Skipped normalization (peak {peak:.5f} near zero)")
 
-        # Step 5: Trim silence from edges
+        # Step 5: Trim silence from edges (preserve 250ms padding so initial/terminal consonants are never clipped)
         threshold = 0.01
         above = np.abs(samples) > threshold
         if np.any(above):
             indices = np.where(above)[0]
-            pad = min(int(0.05 * sr), len(samples))  # 50ms padding
+            pad = min(int(0.25 * sr), len(samples))  # 250ms padding to protect word boundaries
             start = max(0, indices[0] - pad)
             end = min(len(samples), indices[-1] + pad)
             trimmed = samples[start:end]

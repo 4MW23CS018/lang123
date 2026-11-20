@@ -21,7 +21,7 @@ echo Waiting for Whisper model to load on port 5000...
 timeout /t 4 /nobreak >nul
 
 echo [3/3] Starting Ngrok Tunnel on Port 5000...
-start "LangBridge Ngrok Tunnel" cmd /k "cd /d "%~dp0" && ngrok.exe http 5000"
+start "LangBridge Ngrok Tunnel" cmd /k "cd /d "%~dp0" && ngrok.exe http --url=obedience-retrain-jolliness.ngrok-free.dev 5000"
 
 echo.
 echo ========================================================

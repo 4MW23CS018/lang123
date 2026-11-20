@@ -1,5 +1,5 @@
 // public/sw.js - LangBridge PWA Service Worker
-const CACHE_NAME = 'langbridge-cache-v2';
+const CACHE_NAME = 'langbridge-cache-v3';
 const PRECACHE_URLS = [
   '/',
   '/index.html',

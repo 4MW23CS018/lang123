@@ -76,7 +76,7 @@ Respond with strict JSON ONLY in this format:
   "ai_tip": "Great effort! ..."
 }`;
 
-        const candidateModels = ["gemini-flash-latest", "gemini-3.1-flash-lite", "gemini-3-flash-preview", "gemini-2.5-flash-lite"];
+        const candidateModels = ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-2.5-flash", "gemini-flash-latest"];
 
         for (const model of candidateModels) {
           try {
