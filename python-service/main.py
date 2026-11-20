@@ -234,6 +234,16 @@ def transcribe_audio():
                     pass
 
 
+EDGE_VOICES = {
+    "kannada": "kn-IN-GaganNeural",
+    "tamil": "ta-IN-PallaviNeural",
+    "telugu": "te-IN-MohanNeural",
+    "malayalam": "ml-IN-MidhunNeural",
+    "tulu": "kn-IN-GaganNeural",
+    "kodava": "kn-IN-GaganNeural",
+    "english": "en-IN-NeerjaNeural",
+}
+
 @app.route('/tts', methods=['POST', 'OPTIONS'])
 def text_to_speech():
     if request.method == 'OPTIONS':
@@ -251,9 +261,34 @@ def text_to_speech():
     if not cleaned_phrase:
         cleaned_phrase = phrase
 
-    # Primary: Fast, high-quality native TTS via gTTS
-    lang_code = LANGUAGE_CODES.get(language, language[:2])
+    # 1. Primary: High-fidelity Studio Neural TTS via edge-tts (Azure Neural Voice, 100% free, natural accent)
+    voice = EDGE_VOICES.get(language, "kn-IN-GaganNeural")
+    try:
+        import asyncio
+        import edge_tts
 
+        async def _synthesize():
+            comm = edge_tts.Communicate(cleaned_phrase, voice)
+            buf = io.BytesIO()
+            async for chunk in comm.stream():
+                if chunk['type'] == 'audio':
+                    buf.write(chunk['data'])
+            buf.seek(0)
+            return buf
+
+        audio_buf = asyncio.run(_synthesize())
+        if audio_buf and audio_buf.getbuffer().nbytes > 0:
+            return send_file(
+                audio_buf,
+                mimetype='audio/mpeg',
+                as_attachment=False,
+                download_name='pronunciation.mp3'
+            )
+    except Exception as edge_err:
+        print(f"[TTS WARN] Edge Neural TTS failed ({edge_err}), falling back to gTTS...")
+
+    # 2. Secondary fallback: Native gTTS
+    lang_code = LANGUAGE_CODES.get(language, language[:2])
     try:
         tts = gTTS(text=cleaned_phrase, lang=lang_code, slow=True)
         audio_buffer = io.BytesIO()
@@ -267,9 +302,6 @@ def text_to_speech():
         )
     except Exception as e:
         print(f"[TTS ERROR] gTTS generation failed: {e}")
-        return jsonify({'error': str(e)}), 500
-    except Exception as e:
-        print(f"[TTS ERROR] {e}")
         return jsonify({'error': str(e)}), 500
 
 

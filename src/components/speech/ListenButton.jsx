@@ -1,4 +1,4 @@
-import { getFlaskUrl } from "../../lib/flaskConfig";
+import { getFlaskUrl, ACTIVE_RENDER_URL } from "../../lib/flaskConfig";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { personalizePhrase } from "../../data/treeCurriculum";
 
@@ -53,11 +53,42 @@ export default function ListenButton({ phrase, displayPhrase, language, size = 4
     };
   }, []);
 
+  const speakNativeBrowserFallback = useCallback(() => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      try {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(phraseToSpeak);
+        const codeMap = {
+          kannada: "kn-IN",
+          tamil: "ta-IN",
+          telugu: "te-IN",
+          malayalam: "ml-IN",
+          english: "en-IN",
+        };
+        utter.lang = codeMap[(language || "").toLowerCase()] || "kn-IN";
+        utter.rate = 0.85;
+        utter.onend = () => setState("idle");
+        utter.onerror = () => setState("idle");
+        window.speechSynthesis.speak(utter);
+        setState("playing");
+        return true;
+      } catch (e) {
+        console.warn("[TTS] speechSynthesis fallback failed:", e);
+      }
+    }
+    return false;
+  }, [phraseToSpeak, language]);
+
   const play = useCallback(async () => {
     // If already playing, stop it
-    if (state === "playing" && audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+    if (state === "playing") {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
       setState("idle");
       return;
     }
@@ -67,18 +98,40 @@ export default function ListenButton({ phrase, displayPhrase, language, size = 4
     try {
       // If we already fetched this phrase, reuse the cached blob URL
       if (!blobUrlRef.current || cachedPhraseRef.current !== phraseToSpeak) {
-        const flaskUrl = getFlaskUrl();
-        const res = await fetch(`${flaskUrl}/tts`, {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json", 
-            "Bypass-Tunnel-Reminder": "true",
-            "ngrok-skip-browser-warning": "true"
-          },
-          body: JSON.stringify({ phrase: phraseToSpeak, language }),
-        });
+        const primaryUrl = getFlaskUrl();
+        const candidateUrls = [primaryUrl, ACTIVE_RENDER_URL].filter(
+          (u, idx, arr) => u && arr.indexOf(u) === idx
+        );
 
-        if (!res.ok) throw new Error(`TTS error: ${res.status}`);
+        let res = null;
+        for (const targetUrl of candidateUrls) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 6000);
+            const candidateRes = await fetch(`${targetUrl}/tts`, {
+              method: "POST",
+              headers: { 
+                "Content-Type": "application/json", 
+                "Bypass-Tunnel-Reminder": "true",
+                "ngrok-skip-browser-warning": "true"
+              },
+              body: JSON.stringify({ phrase: phraseToSpeak, language }),
+              signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
+
+            if (candidateRes.ok) {
+              res = candidateRes;
+              break;
+            }
+          } catch (endpointErr) {
+            console.warn(`[TTS] Failed calling ${targetUrl}:`, endpointErr.message);
+          }
+        }
+
+        if (!res) {
+          throw new Error("All TTS remote endpoints unreachable");
+        }
 
         if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
         const blob = await res.blob();
@@ -89,14 +142,20 @@ export default function ListenButton({ phrase, displayPhrase, language, size = 4
       const audio = new Audio(blobUrlRef.current);
       audioRef.current = audio;
       audio.onended = () => setState("idle");
-      audio.onerror = () => setState("idle");
+      audio.onerror = () => {
+        // If audio decoding failed, try browser speech synthesis fallback
+        speakNativeBrowserFallback();
+      };
       await audio.play();
       setState("playing");
     } catch (err) {
-      console.error("TTS failed:", err);
-      setState("idle");
+      console.warn("[TTS] Remote TTS unavailable, attempting browser Web Speech fallback:", err);
+      const spoke = speakNativeBrowserFallback();
+      if (!spoke) {
+        setState("idle");
+      }
     }
-  }, [phraseToSpeak, language, state]);
+  }, [phraseToSpeak, language, state, speakNativeBrowserFallback]);
 
   const icon = state === "loading" ? "⏳" : state === "playing" ? "⏸" : "🔊";
   const label =
