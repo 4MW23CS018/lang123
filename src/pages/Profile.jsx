@@ -971,8 +971,8 @@ export default function Profile() {
                   </div>
 
                   <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, background: 'rgba(14, 165, 233, 0.08)', padding: '12px 14px', borderRadius: 12, border: '1px solid rgba(14, 165, 233, 0.2)' }}>
-                    <strong style={{ color: '#0ea5e9', display: 'block', marginBottom: 4 }}>🚀 Primary Ngrok Tunnel Active:</strong>
-                    Connected to your permanent ngrok URL streaming directly to your laptop's Whisper model (4 CPU threads). Works automatically on all devices.
+                    <strong style={{ color: '#0ea5e9', display: 'block', marginBottom: 4 }}>🚀 Architecture: Ngrok Primary + Render Secondary</strong>
+                    Defaults to your high-speed Ngrok tunnel (8 CPU threads on laptop, ~150ms). If you are away from your laptop, tap <strong>☁️ Render Cloud</strong> for 24/7 cloud fallback.
                   </div>
                 </div>
               )}

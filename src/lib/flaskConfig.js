@@ -3,51 +3,56 @@
 export const ACTIVE_NGROK_URL = "https://obedience-retrain-jolliness.ngrok-free.dev";
 export const ACTIVE_RENDER_URL = "https://langbridge-speech-backend.onrender.com";
 export const ACTIVE_CLOUDFLARE_URL = "https://bruce-sized-opening-emacs.trycloudflare.com";
-export const DEFAULT_FALLBACK_URL = ACTIVE_NGROK_URL;
+
+// Primary is always Ngrok (8 CPU threads on your PC); Secondary is Render (24/7 Cloud)
+export const PRIMARY_SERVER_URL = ACTIVE_NGROK_URL;
+export const SECONDARY_SERVER_URL = ACTIVE_RENDER_URL;
+export const DEFAULT_FALLBACK_URL = PRIMARY_SERVER_URL;
 
 /**
  * Returns the active speech service URL.
- * Automatically picks up VITE_FLASK_URL from .env.production / .env / .env.local.
- * If you update .env.production, it automatically detects the change and clears any stale browser cache.
+ * Defaults to Ngrok as primary; falls back to Render as secondary.
  */
 export function getFlaskUrl() {
-  const envUrl = (import.meta.env.VITE_FLASK_URL || "").trim().replace(/\/$/, "");
-
   if (typeof window !== "undefined") {
-    // If the environment variable in .env.production changed, auto-clear stale localStorage override
-    const lastEnvUrl = localStorage.getItem("LAST_VITE_FLASK_URL");
-    if (envUrl && envUrl !== lastEnvUrl) {
-      localStorage.removeItem("FLASK_URL");
-      localStorage.setItem("LAST_VITE_FLASK_URL", envUrl);
-      return envUrl;
-    }
-
     const override = localStorage.getItem("FLASK_URL");
     if (override && override.trim()) {
-      const cleanOverride = override.trim().replace(/\/$/, "");
-      // Auto-migrate legacy or broken overrides (localhost on HTTPS or old temporary tunnels)
+      const clean = override.trim().replace(/\/$/, "");
+
+      // If user specifically picked Render or Cloudflare or a custom URL, respect it
+      if (clean === ACTIVE_RENDER_URL || clean === ACTIVE_CLOUDFLARE_URL) {
+        return clean;
+      }
+
+      // If user had an old localhost or old temporary tunnel in storage, clear it out
       if (
-        (window.location.protocol === "https:" && (cleanOverride.includes("127.0.0.1") || cleanOverride.includes("localhost"))) ||
-        cleanOverride.includes("trycloudflare.com") ||
-        cleanOverride.includes("loca.lt")
+        (window.location.protocol === "https:" && (clean.includes("127.0.0.1") || clean.includes("localhost"))) ||
+        clean.includes("trycloudflare.com") ||
+        clean.includes("loca.lt")
       ) {
         localStorage.removeItem("FLASK_URL");
-        return envUrl || DEFAULT_FALLBACK_URL;
+        return PRIMARY_SERVER_URL;
       }
-      return cleanOverride;
+
+      return clean;
     }
   }
 
-  return envUrl || DEFAULT_FALLBACK_URL;
+  // If environment variable explicitly specifies a non-render custom url, use it; otherwise ALWAYS default to Ngrok as primary!
+  const envUrl = (import.meta.env.VITE_FLASK_URL || "").trim().replace(/\/$/, "");
+  if (envUrl && !envUrl.includes("onrender.com") && !envUrl.includes("127.0.0.1")) {
+    return envUrl;
+  }
+
+  return PRIMARY_SERVER_URL;
 }
 
 export function setFlaskUrl(url) {
   if (typeof window !== "undefined") {
-    const envUrl = (import.meta.env.VITE_FLASK_URL || "").trim().replace(/\/$/, "");
-    if (!url || !url.trim() || url === envUrl) {
+    if (!url || !url.trim() || url === PRIMARY_SERVER_URL) {
       localStorage.removeItem("FLASK_URL");
-      console.log("[flaskConfig] Using environment URL:", envUrl || DEFAULT_FALLBACK_URL);
-      return envUrl || DEFAULT_FALLBACK_URL;
+      console.log("[flaskConfig] Using primary URL:", PRIMARY_SERVER_URL);
+      return PRIMARY_SERVER_URL;
     } else {
       const cleanUrl = url.trim().replace(/\/$/, "");
       localStorage.setItem("FLASK_URL", cleanUrl);
