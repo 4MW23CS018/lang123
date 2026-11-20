@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useAction } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { getFlaskUrl, setFlaskUrl, testFlaskConnection, ACTIVE_NGROK_URL, ACTIVE_CLOUDFLARE_URL } from "../../lib/flaskConfig";
+import { getFlaskUrl, setFlaskUrl, testFlaskConnection, ACTIVE_NGROK_URL, ACTIVE_RENDER_URL, ACTIVE_CLOUDFLARE_URL } from "../../lib/flaskConfig";
 import PronunciationFeedback from "./PronunciationFeedback";
 import WaveformVisualizer from "./WaveformVisualizer";
 import ListenButton from "./ListenButton";
@@ -600,7 +600,17 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
                 borderRadius: 6, padding: '4px 10px', fontSize: 11, color: '#22c55e', fontWeight: 700, cursor: 'pointer'
               }}
             >
-              ⚡ Ngrok (Permanent)
+              ⚡ Ngrok (Primary)
+            </button>
+            <button
+              type="button"
+              onClick={() => { setConfigUrl(ACTIVE_RENDER_URL); handleTest(ACTIVE_RENDER_URL); }}
+              style={{
+                background: 'rgba(14, 165, 233, 0.15)', border: '1px solid rgba(14, 165, 233, 0.35)',
+                borderRadius: 6, padding: '4px 10px', fontSize: 11, color: '#0ea5e9', fontWeight: 700, cursor: 'pointer'
+              }}
+            >
+              ☁️ Render Cloud
             </button>
             <button
               type="button"

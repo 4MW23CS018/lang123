@@ -1,8 +1,9 @@
 // src/lib/flaskConfig.js
 
-export const DEFAULT_FALLBACK_URL = "https://obedience-retrain-jolliness.ngrok-free.dev";
 export const ACTIVE_NGROK_URL = "https://obedience-retrain-jolliness.ngrok-free.dev";
+export const ACTIVE_RENDER_URL = "https://langbridge-speech-backend.onrender.com";
 export const ACTIVE_CLOUDFLARE_URL = "https://bruce-sized-opening-emacs.trycloudflare.com";
+export const DEFAULT_FALLBACK_URL = ACTIVE_NGROK_URL;
 
 /**
  * Returns the active speech service URL.

@@ -49,9 +49,10 @@ CORS(
     app,
     resources={
         r"/*": {
-            "origins": cors_origins,
+            "origins": "*",
             "methods": ["GET", "HEAD", "POST", "OPTIONS"],
             "allow_headers": "*",
+            "expose_headers": "*",
         }
     },
 )
@@ -61,10 +62,12 @@ def add_cors_headers(response):
     origin = request.headers.get("Origin")
     if origin:
         response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Methods"] = "GET, HEAD, POST, OPTIONS, PUT, DELETE"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Bypass-Tunnel-Reminder, Authorization, X-Requested-With, Origin, Accept"
     else:
         response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, HEAD, POST, OPTIONS, PUT, DELETE"
+    response.headers["Access-Control-Allow-Headers"] = "*, Content-Type, Bypass-Tunnel-Reminder, ngrok-skip-browser-warning, Authorization, X-Requested-With, Origin, Accept"
+    response.headers["Access-Control-Expose-Headers"] = "*"
+    response.headers["Access-Control-Allow-Private-Network"] = "true"
     return response
 
 LANGUAGE_CODES = {

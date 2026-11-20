@@ -10,7 +10,7 @@ import {
 import { FRAMES, BANNERS } from "../lib/cosmetics";
 import { SOUTH_INDIAN_LANGUAGES, useLanguage } from "../components/hooks/useLanguage";
 import shopGemIcon from "../assets/shop-gem.png";
-import { getFlaskUrl, setFlaskUrl, ACTIVE_NGROK_URL, ACTIVE_CLOUDFLARE_URL } from "../lib/flaskConfig";
+import { getFlaskUrl, setFlaskUrl, ACTIVE_NGROK_URL, ACTIVE_RENDER_URL, ACTIVE_CLOUDFLARE_URL } from "../lib/flaskConfig";
 
 function getLevel(xp) { return Math.floor(Math.sqrt(xp / 100)) + 1; }
 function xpForLevel(lvl) { return Math.pow(lvl - 1, 2) * 100; }
@@ -910,7 +910,22 @@ export default function Profile() {
                           fontWeight: 700, fontSize: 12, cursor: 'pointer'
                         }}
                       >
-                        ⚡ Use Ngrok (Permanent)
+                        ⚡ Ngrok (Primary)
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setServerUrlInput(ACTIVE_RENDER_URL);
+                          setFlaskUrl(ACTIVE_RENDER_URL);
+                          setServerStatusResult({ ok: true, msg: `Set to Render Cloud: ${ACTIVE_RENDER_URL}` });
+                        }}
+                        style={{
+                          padding: '8px 12px', borderRadius: 8, background: 'rgba(14, 165, 233, 0.15)',
+                          color: '#0ea5e9', border: '1px solid rgba(14, 165, 233, 0.35)',
+                          fontWeight: 700, fontSize: 12, cursor: 'pointer'
+                        }}
+                      >
+                        ☁️ Render Cloud
                       </button>
 
                       <button
@@ -925,7 +940,7 @@ export default function Profile() {
                           fontWeight: 600, fontSize: 12, cursor: 'pointer'
                         }}
                       >
-                        Cloudflare Backup
+                        Cloudflare
                       </button>
 
                       <button
@@ -939,7 +954,7 @@ export default function Profile() {
                           color: 'var(--text-muted)', border: 'none', fontSize: 12, cursor: 'pointer'
                         }}
                       >
-                        Use Localhost
+                        Localhost
                       </button>
                     </div>
 
