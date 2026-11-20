@@ -15,7 +15,7 @@ for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":5000" ^| findstr "LISTENING
 timeout /t 1 /nobreak >nul
 
 echo [2/3] Starting Python Whisper Service (8 CPU Threads)...
-start "LangBridge Python Service" cmd /k "cd /d "%~dp0python-service" && ..\python-service\venv\Scripts\python.exe main.py"
+start "LangBridge Python Service" cmd /k "cd /d "%~dp0python-service" && venv\Scripts\python.exe main.py"
 
 echo Waiting for Whisper model to load on port 5000...
 timeout /t 4 /nobreak >nul
