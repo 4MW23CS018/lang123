@@ -7,7 +7,7 @@ from collections import Counter
 # The 'small' model provides reliable multilingual/Indic phonetic modeling,
 # whereas 'base' frequently collapses into numeric or repetition hallucinations on Kannada.
 # CPU threads for Whisper inference: 8 threads for faster parallelized speech assessment
-cpu_threads = int(os.environ.get("WHISPER_THREADS", 8))
+cpu_threads = int(os.environ.get("WHISPER_THREADS", 4))
 MODEL_NAME = os.environ.get("WHISPER_MODEL", "small")
 print(f"[WHISPER] Loading local Whisper model '{MODEL_NAME}' with {cpu_threads} CPU threads...")
 try:
