@@ -108,10 +108,10 @@ Respond with strict JSON ONLY in this format:
               const parsed = JSON.parse(cleaned);
               if (parsed && typeof parsed.accuracy === "number") {
                 assessmentResult = {
-                  transcription: parsed.transcription || phrase,
+                  transcription: parsed.transcription || "Could not transcribe audio",
                   accuracy: Math.max(0, Math.min(100, Math.round(parsed.accuracy))),
                   word_breakdown: Array.isArray(parsed.word_breakdown) ? parsed.word_breakdown : [],
-                  ai_tip: parsed.ai_tip || `Well done practicing ${phrase}!`,
+                  ai_tip: parsed.ai_tip || `Practice pronouncing "${phrase}".`,
                 };
                 break;
               }

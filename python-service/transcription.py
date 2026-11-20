@@ -139,19 +139,11 @@ def transcribe(audio_path, language_name=None, phrase="", phonetics=""):
         f"audio_file_size={audio_size} bytes"
     )
 
-    # In pronunciation assessment mode, a reference phrase is provided.
-    # In open roleplay mode, use conversational vocabulary prompt for target language.
-    prompt_parts = []
-    if phrase and phrase.strip():
-        prompt_parts.append(phrase.strip())
-    if phonetics and phonetics.strip():
-        prompt_parts.append(phonetics.strip())
-    if not prompt_parts:
-        default_prompt = CONVERSATIONAL_PROMPTS.get(language_name)
-        if default_prompt:
-            prompt_parts.append(default_prompt)
-
-    initial_prompt = ", ".join(prompt_parts) if prompt_parts else None
+    # For genuine speech evaluation, do NOT prime Whisper with the target phrase!
+    # Priming Whisper with the expected phrase biases the decoder into outputting
+    # the target phrase even when the user speaks completely wrong words or gibberish.
+    # Provide only general conversational vocabulary hints for the target language script.
+    initial_prompt = CONVERSATIONAL_PROMPTS.get(language_name)
 
     # Fast, high-throughput decoding configuration for low-CPU cloud instances
     kwargs = {

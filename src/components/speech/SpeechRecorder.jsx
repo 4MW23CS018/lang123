@@ -171,27 +171,13 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
         .catch(() => "");
 
       let assessment = null;
+      const flaskUrl = getFlaskUrl();
 
-      // 2. Fast cloud-native assessment via Convex action (Powered by Gemini Multimodal)
-      try {
-        const storageId = await storagePromise;
-        setProcessingStage("Scoring accuracy with AI… 🎯");
-        assessment = await assessSpeech({
-          userId,
-          lessonId,
-          phrase: targetAssessPhrase,
-          phonetics: effectivePhonetics || cleanPhonetics,
-          language,
-          audioBase64: base64,
-          mimeType: audioBlob.type,
-          audioStorageId: storageId || "",
-        });
-      } catch (convexActionErr) {
-        console.warn("[SpeechRecorder] Primary Convex speech action failed, trying fallback:", convexActionErr);
-
-        // Fallback: Query Python service if active
+      // 1. Primary: Evaluate with Whisper Speech Engine (Ngrok / Render)
+      if (flaskUrl) {
         try {
-          const flaskResponse = await fetch(`${getFlaskUrl()}/assess`, {
+          setProcessingStage("Evaluating speech with Whisper AI… 🎙️");
+          const flaskResponse = await fetch(`${flaskUrl}/assess`, {
             method: "POST",
             headers: { 
               "Content-Type": "application/json", 
@@ -209,16 +195,41 @@ export default function SpeechRecorder({ phrase, displayPhrase, language, userId
 
           if (flaskResponse.ok) {
             const flaskData = await flaskResponse.json();
-            const { xpEarned } = await saveAssessment({
-              userId, lessonId,
-              transcription: flaskData.transcription,
-              accuracy: flaskData.accuracy,
-              audioStorageId: "",
-            });
-            assessment = { ...flaskData, xpEarned };
+            if (flaskData && typeof flaskData.accuracy === "number") {
+              const storageId = await storagePromise;
+              const { xpEarned } = await saveAssessment({
+                userId, lessonId,
+                transcription: flaskData.transcription || "",
+                accuracy: flaskData.accuracy,
+                audioStorageId: storageId || "",
+              });
+              assessment = { ...flaskData, xpEarned };
+            }
+          } else {
+            console.warn("[SpeechRecorder] Speech server returned status:", flaskResponse.status);
           }
         } catch (flaskErr) {
-          console.warn("[SpeechRecorder] Flask fallback failed:", flaskErr);
+          console.warn("[SpeechRecorder] Primary speech server call failed, trying Convex fallback:", flaskErr);
+        }
+      }
+
+      // 2. Secondary Fallback: Cloud-native assessment via Convex action if Python server is unreachable
+      if (!assessment) {
+        try {
+          const storageId = await storagePromise;
+          setProcessingStage("Evaluating with Cloud AI… 🎯");
+          assessment = await assessSpeech({
+            userId,
+            lessonId,
+            phrase: targetAssessPhrase,
+            phonetics: effectivePhonetics || cleanPhonetics,
+            language,
+            audioBase64: base64,
+            mimeType: audioBlob.type,
+            audioStorageId: storageId || "",
+          });
+        } catch (convexActionErr) {
+          console.warn("[SpeechRecorder] Convex speech action also failed:", convexActionErr);
         }
       }
 
